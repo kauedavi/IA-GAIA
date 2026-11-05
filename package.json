@@ -1,0 +1,26 @@
+{
+  "name": "ia-hari",
+  "version": "1.0.0",
+  "description": "Projeto para implementação de IA para alunos poderem se localizarem e estarem cientes dos locais da Instituição SENAI \"Anchieta\"",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start":"node agent/hari.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kauedavi/IA-HARI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/kauedavi/IA-HARI/issues"
+  },
+  "homepage": "https://github.com/kauedavi/IA-HARI#readme",
+  "dependencies": {
+    "@google/genai": "^2.32.0",
+    "dotenv": "^18.0.9"
+  }
+}

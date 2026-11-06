@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#06121a" />
+    <title>H.A.R.I.</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main id="app">
+      <section id="tLogin" class="tela on">
+        <div class="topo">
+          <div class="marca">H.<b>A.</b>R.I.</div>
+          <span class="esp"></span>
+          <span class="sub">Assistente de orientação</span>
+        </div>
+        <div id="palco">
+          <canvas id="orbeLogin"></canvas>
+          <div id="rotulo">Seu guia no SENAI</div>
+        </div>
+        <div class="card">
+          <h2>Entrar no H.A.R.I.</h2>
+          <div id="perfis" class="perfis">
+            <button class="perfil on" data-p="aluno" type="button">Aluno</button>
+            <button class="perfil" data-p="professor" type="button">Professor</button>
+            <button class="perfil" data-p="empresa" type="button">Empresa</button>
+          </div>
+          <div class="abaLogin">
+            <button class="on" data-m="entrar" type="button">Entrar</button>
+            <button data-m="criar" type="button">Criar conta</button>
+          </div>
+          <div id="formLogin"></div>
+          <div id="erroLogin" class="erro"></div>
+          <button id="btLogin" class="botao" type="button">Entrar</button>
+          <button id="btVisitante" class="botao sec" type="button">Continuar como visitante</button>
+        </div>
+      </section>
+
+      <section id="tHari" class="tela chat-home">
+        <header class="chat-header">
+          <img class="senai-logo" src="https://upload.wikimedia.org/wikipedia/commons/8/8c/SENAI_S%C3%A3o_Paulo_logo.png?utm_source=pt.wikipedia.org&utm_campaign=index&utm_content=original" alt="SENAI São Paulo" />
+          <div class="chat-brand">
+            <strong>H.A.R.I</strong>
+            <span id="subUnidade">Seu guia no SENAI</span>
+          </div>
+          <span class="esp"></span>
+          <span id="pontoIa" class="ponto"></span><span id="txIa" class="chat-status">offline</span>
+          <img class="chat-avatar header-avatar" src="src/img/Avatar%20de%20Rob%C3%B4%20Neon%20emblema%20circular.png" alt="Avatar do robô H.A.R.I." />
+        </header>
+
+        <div class="chat-content">
+          <div class="welcome-message">
+            <img class="chat-avatar message-avatar" src="src/img/Avatar%20de%20Rob%C3%B4%20Neon%20emblema%20circular.png" alt="" />
+            <div class="welcome-bubbles">
+              <div class="chat-bubble assistant-bubble">Olá! Sou H.A.R.I, seu assistente digital no SENAI.</div>
+              <div class="chat-bubble assistant-bubble">Como posso ajudar você hoje? Posso mostrar seus horários, calendários, ou ajudar a se localizar na instituição.</div>
+            </div>
+          </div>
+
+          <div id="cxAgora" class="chat-now"></div>
+          <div id="sugestoes" class="chat-quick-actions"></div>
+          <div id="conversa" class="conversa"></div>
+          <div class="chat-brand-footer">
+            <img class="chat-avatar footer-avatar" src="src/img/Avatar%20de%20Rob%C3%B4%20Neon%20emblema%20circular.png" alt="" />
+            <span>Seu guia inteligente no SENAI</span>
+          </div>
+        </div>
+
+        <div class="entradaLinha chat-input">
+          <button id="btMic" class="voice-button" type="button" aria-label="Falar">♩</button>
+          <input id="entrada" autocomplete="off" placeholder="Digite uma pergunta para H.A.R.I..." />
+          <button id="btEnviar" class="send-button" type="button" aria-label="Enviar mensagem">➤</button>
+        </div>
+
+        <div class="legacy-3d" aria-hidden="true">
+          <canvas id="orbe"></canvas>
+          <div id="rotulo">Clique na esfera e fale comigo</div>
+        </div>
+      </section>
+
+      <section id="tMapa" class="tela mapa-tela">
+        <div class="topo mapa-topo"><div><h2>Mapa</h2><p class="mapa-subtitulo">Encontre salas e lugares da unidade</p></div><span class="esp"></span><button id="btOnde" class="botao sec" type="button">📍 Onde estou?</button></div>
+        <div id="avisoMapa" class="nota"></div>
+        <div id="avisoPick" class="nota" style="display:none"></div>
+        <div class="card mapa-busca">
+          <label class="mapa-label" for="buscaSala">Para onde você vai?</label>
+          <input id="buscaSala" type="search" autocomplete="off" placeholder="Ex.: laboratório 7" />
+          <div id="resBusca"></div>
+          <div class="mapa-origem">
+            <label class="mapa-label" for="selDe">Você está em</label>
+            <select id="selDe"></select>
+            <span id="origemTx" class="nota"></span>
+          </div>
+        </div>
+        <div class="mapa-area">
+          <div id="modoMapa" class="chips mapa-modos">
+            <button id="bt2D" class="chip" type="button">2D</button>
+            <button id="bt3D" class="chip on" type="button">3D</button>
+          </div>
+          <div id="mapaCx" class="mapaCx">
+            <svg id="mapa" viewBox="0 0 1000 1300" role="img" aria-label="Mapa da unidade"></svg>
+            <canvas id="mapa3d" aria-label="Mapa tridimensional da unidade"></canvas>
+            <div id="nav3d" style="display:none"><button id="nvAnt" type="button">‹</button><span id="nvIc"></span><strong id="nvTx"></strong><small id="nvSub"></small><span id="nvInfo"></span><button id="nvProx" type="button">Próximo ›</button><button id="nvVoz" type="button">🔊</button><button id="nvSair" type="button">Sair</button></div>
+          </div>
+          <div class="mapControles"><button id="zMais" type="button" aria-label="Aumentar zoom">+</button><button id="zMenos" type="button" aria-label="Diminuir zoom">−</button><button id="zZero" type="button" aria-label="Restaurar zoom">1:1</button><button id="bt3DGirar" type="button">Girar</button><button id="bt3DTopo" type="button">Topo</button><button id="bt3DNorte" type="button">Norte <span class="agulha" aria-hidden="true"></span></button></div>
+        </div>
+        <div class="mapa-painel">
+          <div class="mapa-painel-titulo">Pavimento</div>
+          <div id="andares" class="chips"></div>
+        </div>
+        <div id="pilAndar" class="pilula"></div>
+        <div id="rota"></div>
+        <div id="dica3d" class="nota"></div>
+      </section>
+
+      <section id="tHorarios" class="tela"><div class="topo"><h2>Horários</h2><span class="esp"></span><button id="pilTurma" class="pilula" type="button"></button></div><div id="dias" class="chips"></div><div id="resumoDia" class="nota"></div><div id="listaAulas"></div></section>
+      <section id="tAgenda" class="tela"><div class="topo"><h2 id="tituloAgenda">Agenda</h2></div><div id="filtroAgenda" class="chips"></div><div id="listaAgenda"></div></section>
+      <section id="tCursos" class="tela"><div class="topo"><h2>Cursos</h2></div><div id="cursosSub" class="sub"></div><div id="listaCursos"></div><div class="acoes"><button id="btPortfolio" class="botao sec" type="button">Portfólio</button><button id="btInteresse" class="botao sec" type="button">Tenho interesse</button><button id="btVisita" class="botao sec" type="button">Agendar visita</button></div></section>
+      <section id="tUnidade" class="tela"><div class="topo"><h2>Unidade</h2></div><div id="infoUnidade"></div><div class="acoes"><button id="uMaps" class="botao sec" type="button">Abrir no Maps</button><button id="uMapa" class="botao sec" type="button">Ver mapa</button></div></section>
+      <section id="tAjustes" class="tela">
+        <div class="topo"><h2>Configurações</h2></div>
+        <div id="cartaoConta"></div>
+        <div class="card configuracao-secao">
+          <h3>Informações pessoais</h3>
+          <label>Nome <input id="aNome" autocomplete="name" /></label>
+          <label>Curso <input id="aTurma" /></label>
+          <label>SENAI <input id="aUnidade" /></label>
+        </div>
+        <div class="card configuracao-secao">
+          <h3>Aparência</h3>
+          <p class="nota">Escolha como o H.A.R.I. será exibido.</p>
+          <button id="swTema" class="botao sec configuracao-toggle" type="button"></button>
+        </div>
+        <div class="card configuracao-secao">
+          <h3>Voz</h3>
+          <p class="nota">Escolha uma voz disponível no seu dispositivo e teste antes de usar.</p>
+          <label for="aVoz">Voz para leitura</label>
+          <select id="aVoz"></select>
+          <div id="notaVoz" class="nota"></div>
+          <div class="acoes configuracao-acoes">
+            <button id="btTestarVoz" class="botao sec" type="button">Testar voz</button>
+            <button id="swVoz" class="botao sec" type="button"></button>
+          </div>
+        </div>
+        <div class="card configuracao-secao">
+          <h3>Preferências</h3>
+          <label id="linhaLembrete">Lembrete antes da aula <input id="aLembrete" type="number" /></label>
+        </div>
+        <div id="ajEdicao"><h3>Salas e lugares</h3><div id="listaSalas" class="lista"></div><button id="btNovaSala" class="botao sec" type="button">+ Adicionar sala ou lugar</button><h3>Blocos do mapa</h3><div id="listaBlocos" class="lista"></div><button id="btNovoBloco" class="botao sec" type="button">+ Adicionar bloco</button><h3>Planta real</h3><button id="btPlanta" class="botao sec" type="button">Carregar planta</button><button id="btSemPlanta" class="botao perigo" type="button">Remover planta</button><input id="arqPlanta" type="file" accept="image/*" hidden /></div>
+        <div id="ajDados"><h3>Dados</h3><button id="btExportar" class="botao sec" type="button">Exportar</button><button id="btImportar" class="botao sec" type="button">Importar</button><button id="btExemplo" class="botao perigo" type="button">Voltar ao exemplo</button><input id="arqImport" type="file" accept=".json,application/json,text/plain" hidden /></div>
+        <button id="btSair" class="botao perigo" type="button">Sair da conta</button><div id="versao" class="nota"></div>
+      </section>
+
+      <button id="fab" class="fab" type="button">+</button>
+      <nav id="nav"></nav>
+    </main>
+    <div id="veu"></div>
+    <div id="folha"><div class="alca"></div><div id="folhaCorpo"></div></div>
+    <div id="toast"></div>
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

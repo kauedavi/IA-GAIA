@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start":"node agent/hari.js"
+    "start": "node server/server.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,8 @@
   "homepage": "https://github.com/kauedavi/IA-HARI#readme",
   "dependencies": {
     "@google/genai": "^2.32.0",
+    "cors": "^2.8.5",
     "dotenv": "^18.0.9"
+    ,"express": "^4.21.2"
   }
 }

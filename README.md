@@ -3,6 +3,10 @@
 Assistente para consulta de horários e orientação de salas da Escola SENAI
 Anchieta.
 
+# Modelos 
+
+
+
 ## Arquitetura
 
 O frontend usa um ponto de entrada ES Module e módulos de domínio carregados

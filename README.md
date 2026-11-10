@@ -3,9 +3,53 @@
 Assistente para consulta de horários e orientação de salas da Escola SENAI
 Anchieta.
 
-# Modelos 
+## # 🛠️ Manual de Sobrevivência (iniciar HARI)
+
+### Primerio, abra o terminal do VS code, e digite:
+
+```
+npm install
+```
+Isso vai instalar tudo que o projeto exige para rodar sem choro!
+
+---
+
+### 🚨 Socorro, deu erro de permissão no PowerShell!
+```
+Get-ExecutionPolicy
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+Se o terminal chorar e bloquear a execução de scripts, relaxa. Cole isso aqui para liberar o acesso (e use com responsabilidade
+
+---
+
+### Agora como configurar?
+- Dê uma olhada no arquivo .env.example na raiz do projeto.
+
+- Crie uma cópia dele bem ali no mesmo lugar e renomeie para .env.
+
+- Calma, não precisa chorar ao perceber que o campo GEMINI_API_KEY= está vazio. Basta colar lá o valor que te mandei no Teams... mas cole apenas no .env (nunca no exemplo, senão o Git vai expor tudo para um bot russo pegar).
+
+⚠️ **IMPORTANTE:** Na pasta server também tem um .env.example. A dinâmica é a mesma: crie um .env lá dentro e copie o conteúdo padrão, sem inventar moda!
+
+### Como testar?
+
+No terminal, execute:
+```
+npm start
+```
+- Apareceu a mensagem de que o servidor está rodando no localhost? Deu certo!
+
+- Se não apareceu... bom, aí você pode cogitar chorar um pouquinho.
+
+depois abra a pasta client no **explorador de arquivos**, fora do VS code, clique no index.html, entre como **visitante** e seja feliz!
 
 
+
+# Modelos aprovados
+
+- gemini-3.6-flash
+- gemini-3.5-flash
 
 ## Arquitetura
 
@@ -31,7 +75,6 @@ migração.
 - `client/src/map/map2d.js`: mapa SVG, busca e rotas 2D.
 - `client/src/map/map3d.js`: Canvas 3D, câmera e navegação passo a passo.
 - `client/src/bootstrap.js`: composição final, eventos e inicialização.
-
 
 - `server/server.js`: bootstrap do Express.
 - `server/src/config/`: configuração do Gemini e ambiente.

@@ -1,19 +1,23 @@
 :root {
-  /* Tema Escuro (Dark Mode) - SENAI */
-  --bg: #120808;
-  --bg2: #1c0e0e;
-  --card: #261414;
-  --card2: #331b1b;
-  --linha: #472626;
-  --tx: #fcebeb;
-  --tx2: #d6b2b2;
-  --tx3: #a88080;
-  --pri: #e30613;   /* Vermelho SENAI */
-  --pri2: #b8000a;  /* Vermelho SENAI mais escuro para hover/active */
-  --amb: #ffb547;
-  --rosa: #ff6b8b;
-  --ok: #5ee08a;
-  --sombra: 0 10px 30px rgba(0, 0, 0, .45);
+  --bg: #0a0a0a;    
+  --bg2: #121212;    
+  --card: #18181b;   
+  --card2: #222226;   
+  --linha: #2e2e34;   
+  
+  --tx: #f4f4f5;      
+  --tx2: #a1a1aa;    
+  --tx3: #71717a;     
+  
+  --pri: #e30613;     
+  --pri2: #b8000a;   
+  
+  
+  --amb: #f59e0b;    
+  --rosa: #ff4d6d;    
+  --ok: #22c55e;     
+  
+  --sombra: 0 10px 30px rgba(0, 0, 0, 0.75);
   --r: 18px;
 }
 
@@ -2141,4 +2145,146 @@ nav button.on svg {
 
 #tAjustes .configuracao-acoes {
   margin-top: 4px;
+}
+
+/* Mantém as telas internas compatíveis com o tema escuro global. */
+:root:not([data-tema="claro"]) #tHorarios.on,
+:root:not([data-tema="claro"]) #tAgenda.on,
+:root:not([data-tema="claro"]) #tCursos.on,
+:root:not([data-tema="claro"]) #tUnidade.on,
+:root:not([data-tema="claro"]) #tAjustes.on {
+  --bg: #0a0a0a;
+  --bg2: #121212;
+  --card: #18181b;
+  --card2: #222226;
+  --linha: #2e2e34;
+  --tx: #f4f4f5;
+  --tx2: #a1a1aa;
+  --tx3: #71717a;
+  --pri: #e30613;
+  --pri2: #b8000a;
+  --amb: #f59e0b;
+  --rosa: #ff4d6d;
+  background:
+    radial-gradient(circle at 100% 0, rgba(227, 6, 19, .12), transparent 28%),
+    var(--bg);
+  color: var(--tx);
+}
+
+:root:not([data-tema="claro"]) #tHorarios .topo,
+:root:not([data-tema="claro"]) #tAgenda .topo,
+:root:not([data-tema="claro"]) #tCursos .topo,
+:root:not([data-tema="claro"]) #tUnidade .topo,
+:root:not([data-tema="claro"]) #tAjustes .topo,
+:root:not([data-tema="claro"]) #tHorarios .item,
+:root:not([data-tema="claro"]) #tAgenda .item,
+:root:not([data-tema="claro"]) #tUnidade .linhaInfo,
+:root:not([data-tema="claro"]) nav {
+  background: var(--card);
+  border-color: var(--linha);
+  color: var(--tx);
+}
+
+:root:not([data-tema="claro"]) #tHorarios .chip,
+:root:not([data-tema="claro"]) #tAgenda .chip,
+:root:not([data-tema="claro"]) #tCursos .chip,
+:root:not([data-tema="claro"]) #tUnidade .chip,
+:root:not([data-tema="claro"]) #tAjustes .chip,
+:root:not([data-tema="claro"]) #tHorarios .botao.sec,
+:root:not([data-tema="claro"]) #tAgenda .botao.sec,
+:root:not([data-tema="claro"]) #tCursos .botao.sec,
+:root:not([data-tema="claro"]) #tUnidade .botao.sec,
+:root:not([data-tema="claro"]) #tAjustes .botao.sec {
+  background: var(--card);
+  border-color: var(--linha);
+  color: var(--tx2);
+}
+
+:root:not([data-tema="claro"]) #tAjustes input,
+:root:not([data-tema="claro"]) #tAjustes select,
+:root:not([data-tema="claro"]) #tAjustes textarea,
+:root:not([data-tema="claro"]) #tHorarios input,
+:root:not([data-tema="claro"]) #tAgenda input,
+:root:not([data-tema="claro"]) #tCursos input,
+:root:not([data-tema="claro"]) #tUnidade input {
+  background: var(--bg2);
+  border-color: var(--linha);
+  color: var(--tx);
+}
+
+:root:not([data-tema="claro"]) #tHorarios .chip.on,
+:root:not([data-tema="claro"]) #tAgenda .chip.on,
+:root:not([data-tema="claro"]) #tCursos .chip.on,
+:root:not([data-tema="claro"]) #tUnidade .chip.on,
+:root:not([data-tema="claro"]) #tAjustes .chip.on,
+:root:not([data-tema="claro"]) #tHorarios .botao,
+:root:not([data-tema="claro"]) #tAgenda .botao,
+:root:not([data-tema="claro"]) #tCursos .botao:not(.sec),
+:root:not([data-tema="claro"]) #tUnidade .botao:not(.sec),
+:root:not([data-tema="claro"]) #tAjustes .botao:not(.sec) {
+  background: var(--pri);
+  border-color: var(--pri);
+  color: #fff;
+}
+
+:root:not([data-tema="claro"]) nav button {
+  color: var(--tx2);
+}
+
+:root:not([data-tema="claro"]) nav button.on {
+  color: var(--pri);
+  background: rgba(227, 6, 19, .16);
+}
+
+:root:not([data-tema="claro"]) #tHari.chat-home.on {
+  --chat-ink: #f4f4f5;
+  --chat-muted: #a1a1aa;
+  background: var(--bg);
+  color: var(--chat-ink);
+}
+
+:root:not([data-tema="claro"]) .chat-header,
+:root:not([data-tema="claro"]) .chat-input {
+  background: var(--card);
+  border-color: var(--linha);
+}
+
+:root:not([data-tema="claro"]) .chat-home .msg.ia {
+  background: var(--card2);
+  color: var(--chat-ink);
+}
+
+:root:not([data-tema="claro"]) .chat-input input {
+  background: var(--bg2);
+  border-color: var(--linha);
+  color: var(--chat-ink);
+}
+
+:root:not([data-tema="claro"]) .voice-button {
+  background: var(--card2);
+  color: var(--tx2);
+}
+
+:root:not([data-tema="claro"]) .chat-brand-footer {
+  color: var(--tx2);
+}
+
+:root:not([data-tema="claro"]) .mapa-tela {
+  --bg: #0a0a0a;
+  --bg2: #121212;
+  --card: #18181b;
+  --card2: #222226;
+  --linha: #2e2e34;
+  --tx: #f4f4f5;
+  --tx2: #a1a1aa;
+  --tx3: #71717a;
+  --mapa-bg: #0a0a0a;
+  --mapa-bg2: #121212;
+  --mapa-card: #18181b;
+  --mapa-card2: #222226;
+  --mapa-linha: #2e2e34;
+  --mapa-tx: #f4f4f5;
+  --mapa-tx2: #a1a1aa;
+  --mapa-tx3: #71717a;
+  --mapa-sombra: 0 4px 14px rgba(0, 0, 0, .45);
 }

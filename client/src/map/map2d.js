@@ -1031,17 +1031,7 @@ $("buscaSala").oninput = function () {
   }
   var r = D.salas
     .filter(function (s) {
-      return (
-        norm(
-          s.nome +
-            " " +
-            s.apelidos +
-            " " +
-            (TIPOS[s.tipo] || "") +
-            " " +
-            ((bloco(s.bloco) || {}).nome || ""),
-        ).indexOf(q) >= 0
-      );
+      return norm(s.nome).indexOf(q) >= 0;
     })
     .slice(0, 8);
   $("resBusca").innerHTML = r.length
@@ -1053,11 +1043,9 @@ $("buscaSala").oninput = function () {
             esc(s.id) +
             '"><span class="cor" style="background:' +
             (b ? b.cor : "#9cb8bd") +
-            '"></span><span style="flex:1"><div class="tt">' +
+            '"></span><span class="tt">' +
             esc(s.nome) +
-            '</div><div class="ds">' +
-            esc(ondeFica(s)) +
-            "</div></span>" +
+            "</span>" +
             icone("pino") +
             "</button>"
           );

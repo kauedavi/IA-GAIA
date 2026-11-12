@@ -2598,3 +2598,66 @@ nav button.on svg {
   --mapa-tx3: #71717a;
   --mapa-sombra: 0 4px 14px rgba(0, 0, 0, .45);
 }
+
+:root:not([data-tema="claro"]) .mapa-tela {
+  background: var(--mapa-bg);
+  color: var(--mapa-tx);
+}
+
+:root:not([data-tema="claro"]) .mapa-tela .mapa-onde,
+:root:not([data-tema="claro"]) .mapa-tela .mapa-seletor,
+:root:not([data-tema="claro"]) .mapa-tela .mapa-painel,
+:root:not([data-tema="claro"]) .mapa-tela .andar-controles button {
+  background: var(--mapa-card);
+  border-color: var(--mapa-linha);
+  color: var(--mapa-tx);
+}
+
+:root:not([data-tema="claro"]) .mapa-tela .mapa-subtitulo,
+:root:not([data-tema="claro"]) .mapa-tela .mapa-label,
+:root:not([data-tema="claro"]) .mapa-tela .mapa-painel-titulo,
+:root:not([data-tema="claro"]) .mapa-tela .mapa-ajuda {
+  color: var(--mapa-tx2);
+}
+
+:root:not([data-tema="claro"]) .mapa-tela .mapa-input {
+  background: var(--mapa-bg2);
+  border-color: var(--mapa-linha);
+}
+
+:root:not([data-tema="claro"]) .mapa-tela .mapa-input > span {
+  color: var(--mapa-tx3);
+}
+
+:root:not([data-tema="claro"]) .mapa-tela .mapa-input input,
+:root:not([data-tema="claro"]) .mapa-tela .mapa-input select {
+  color: var(--mapa-tx);
+}
+
+:root:not([data-tema="claro"]) .mapa-tela #resBusca {
+  background: var(--mapa-card);
+  border-color: var(--mapa-linha);
+}
+
+:root:not([data-tema="claro"]) .mapa-tela #mapaCx {
+  background: var(--mapa-bg2);
+  border-color: var(--mapa-linha);
+}
+
+:root:not([data-tema="claro"]) .mapa-tela .andar-controles button.on,
+:root:not([data-tema="claro"]) .mapa-tela .mapa-painel .chip.on {
+  background: var(--mapa-pri);
+  border-color: var(--mapa-pri);
+  color: #fff;
+}
+
+:root:not([data-tema="claro"]) .mapa-tela .mapa-painel .chip {
+  background: var(--mapa-card);
+  border-color: var(--mapa-linha);
+  color: var(--mapa-tx2);
+}
+
+:root:not([data-tema="claro"]) .mapa-tela .mapa-iniciar,
+:root:not([data-tema="claro"]) .mapa-tela #nav3d button {
+  background: var(--mapa-pri);
+}

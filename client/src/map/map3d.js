@@ -69,21 +69,22 @@ function cor3() {
     cacheKey = k + (mapa ? ":mapa" : ":app");
   if (COR3 && COR3k === cacheKey) return COR3;
   var c = getComputedStyle(document.documentElement);
+  if (mapa) c = getComputedStyle($("tMapa"));
   function g(n) {
     return c.getPropertyValue(n).trim();
   }
-  var claro = mapa || k === "claro";
+  var claro = k === "claro";
   COR3k = cacheKey;
   COR3 = {
-    bg: mapa ? "#ffffff" : g("--bg"),
-    bg2: mapa ? "#f3f4f5" : g("--bg2"),
-    tx: mapa ? "#202124" : g("--tx"),
-    tx2: mapa ? "#5f6368" : g("--tx2"),
-    tx3: mapa ? "#7a7f85" : g("--tx3"),
-    amb: mapa ? "#e9a227" : g("--amb"),
-    pri: mapa ? "#c8102e" : g("--pri"),
-    linha: mapa ? "#e1e3e6" : g("--linha"),
-    card: mapa ? "#ffffff" : g("--card"),
+    bg: mapa ? g("--mapa-bg") : g("--bg"),
+    bg2: mapa ? g("--mapa-bg2") : g("--bg2"),
+    tx: mapa ? g("--mapa-tx") : g("--tx"),
+    tx2: mapa ? g("--mapa-tx2") : g("--tx2"),
+    tx3: mapa ? g("--mapa-tx3") : g("--tx3"),
+    amb: mapa ? g("--mapa-amb") : g("--amb"),
+    pri: mapa ? g("--mapa-pri") : g("--pri"),
+    linha: mapa ? g("--mapa-linha") : g("--linha"),
+    card: mapa ? g("--mapa-card") : g("--card"),
     claro: claro,
     fundo: claro ? "#e9f1ef" : "#07151d",
     chao: claro ? "#d9e4e1" : "#0e2029",

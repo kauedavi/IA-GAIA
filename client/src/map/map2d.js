@@ -254,8 +254,7 @@ function desenharMapa() {
   m.innerHTML = "";
   aplicarVB();
   var claro =
-    document.documentElement.dataset.tema === "claro" ||
-    ($("tMapa") && $("tMapa").classList.contains("on"));
+    document.documentElement.dataset.tema === "claro";
   var defs = svgEl("defs", {});
   defs.innerHTML =
     '<pattern id="grade" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="' +

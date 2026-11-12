@@ -11,17 +11,46 @@
   <body>
     <main id="app">
       <section id="tLogin" class="tela on">
-        <div class="topo">
+        <div class="login-topo">
+          <img
+            class="login-senai-logo"
+            src="https://upload.wikimedia.org/wikipedia/commons/8/8c/SENAI_S%C3%A3o_Paulo_logo.png?utm_source=pt.wikipedia.org&utm_campaign=index&utm_content=original"
+            alt="SENAI"
+          />
           <div class="marca">H.<b>A.</b>R.I.</div>
-          <span class="esp"></span>
-          <span class="sub">Assistente de orientação</span>
         </div>
         <div id="palco">
-          <canvas id="orbeLogin"></canvas>
+          <img
+            id="roboLogin"
+            src="src/img/Rob%C3%B4%20Mascote%20Neon%20S.png"
+            alt="Mascote robô H.A.R.I."
+          />
           <div id="rotulo">Seu guia no SENAI</div>
         </div>
-        <div class="card">
-          <h2>Entrar no H.A.R.I.</h2>
+        <div class="login-boas-vindas">
+          <h1>BEM-VINDO AO H.A.R.I.</h1>
+          <p>Sua jornada no SENAI começa aqui.</p>
+        </div>
+        <div class="login-acoes">
+          <button id="btLoginSenai" class="login-acao login-acao-principal" type="button">
+            <img class="login-acao-icone" src="https://proeducador.sp.senai.br/site/icons/logo-small.png" alt="" />
+            ENTRAR COM SENAI
+          </button>
+          <div class="login-ou"><span></span><b>OU</b><span></span></div>
+          <button id="btCriarInicial" class="login-acao login-acao-contorno" type="button">
+            <img class="login-acao-icone" src="https://cdn-icons-png.flaticon.com/512/8847/8847137.png" alt="" />
+            CADASTRAR-SE
+          </button>
+          <button id="btVisitanteInicial" class="login-acao login-acao-visitante" type="button">
+            <span aria-hidden="true">→</span>
+            ENTRAR COMO VISITANTE
+          </button>
+        </div>
+        <div class="login-ja-conta">Já tem conta? <button id="btLoginInicial" type="button">Login</button></div>
+        <footer class="login-rodape">HARI v1.0 | © 2023 SENAI</footer>
+
+        <div id="cartaoLogin" class="card login-form-card" hidden>
+          <button id="btVoltarLogin" class="login-voltar" type="button">← Voltar</button>
           <div id="perfis" class="perfis">
             <button class="perfil on" data-p="aluno" type="button">Aluno</button>
             <button class="perfil" data-p="professor" type="button">Professor</button>

@@ -104,8 +104,6 @@ iniciarSessao();
 setInterval(function () {
   if (telaAtual === "tHari") renderAgora();
   if (telaAtual === "tHorarios") renderHorarios();
-  if ($("tLogin").classList.contains("on"))
-    desenharOrbe($("orbeLogin"), performance.now());
 }, 30000);
 (function () {
   var s = situacao(),

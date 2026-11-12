@@ -101,6 +101,12 @@ function hashSenha(senha, sal) {
   return sha256js(t);
 }
 var LOGIN = { perfil: "aluno", modo: "entrar" };
+function abrirLogin(modo) {
+  LOGIN.modo = modo;
+  $("cartaoLogin").hidden = false;
+  $("cartaoLogin").scrollIntoView({ behavior: "smooth", block: "start" });
+  renderLogin();
+}
 function renderLogin() {
   document.querySelectorAll("#perfis .perfil").forEach(function (b) {
     b.classList.toggle("on", b.dataset.p === LOGIN.perfil);
@@ -169,6 +175,22 @@ document.querySelectorAll(".abaLogin button").forEach(function (b) {
     renderLogin();
   };
 });
+$("btLoginSenai").onclick = function () {
+  abrirLogin("entrar");
+};
+$("btCriarInicial").onclick = function () {
+  abrirLogin("criar");
+};
+$("btLoginInicial").onclick = function () {
+  abrirLogin("entrar");
+};
+$("btVoltarLogin").onclick = function () {
+  $("cartaoLogin").hidden = true;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+$("btVisitanteInicial").onclick = function () {
+  $("btVisitante").click();
+};
 $("btLogin").onclick = function () {
   var u = norm($("lUser").value).replace(/ /g, ""),
     sen = $("lSenha").value,
@@ -282,6 +304,8 @@ function iniciarSessao() {
   $("tLogin").classList.toggle("on", !logado);
   if (!logado) {
     SESSAO = null;
+    $("cartaoLogin").hidden = true;
+    window.scrollTo({ top: 0, behavior: "auto" });
     renderLogin();
     return;
   }

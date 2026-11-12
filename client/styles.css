@@ -1945,39 +1945,243 @@ nav button {
   position: fixed;
   inset: 0;
   z-index: 30;
-  background: var(--bg);
+  --login-bg: #f7fbfc;
+  --login-ink: #641629;
+  --login-red: #aa102b;
+  background:
+    linear-gradient(145deg, transparent 0 74%, rgba(216, 231, 234, .36) 74% 74.2%, transparent 74.2%),
+    linear-gradient(35deg, transparent 0 12%, rgba(216, 231, 234, .26) 12% 12.2%, transparent 12.2%),
+    var(--login-bg);
+  color: var(--login-ink);
   overflow-y: auto;
-  padding: 0 20px 30px;
+  padding: 22px 20px 18px;
   display: none
 }
 
 #tLogin.on {
-  display: block
+  display: block;
+  background:
+    linear-gradient(145deg, transparent 0 74%, rgba(216, 231, 234, .36) 74% 74.2%, transparent 74.2%),
+    linear-gradient(35deg, transparent 0 12%, rgba(216, 231, 234, .26) 12% 12.2%, transparent 12.2%),
+    var(--login-bg)
 }
 
-#orbeLogin {
+#tLogin > * {
+  width: min(100%, 380px);
+  margin-left: auto;
+  margin-right: auto
+}
+
+.login-topo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding-top: 8px
+}
+
+.login-senai-logo {
+  width: 138px;
+  height: 36px;
+  object-fit: contain
+}
+
+#tLogin .marca {
+  color: var(--login-red);
+  font-size: 41px;
+  letter-spacing: .04em;
+  line-height: 1;
+  text-align: center
+}
+
+#tLogin .marca b {
+  color: inherit
+}
+
+#tLogin #palco {
+  height: 220px;
+  margin-top: 8px
+}
+
+#tLogin #rotulo {
+  display: none
+}
+
+#roboLogin {
   width: 100%;
-  height: 230px;
-  display: block
+  height: 220px;
+  margin-top: 10px;
+  display: block;
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 8px 8px rgba(74, 106, 112, .18))
 }
 
-.marcaG {
+.login-boas-vindas {
   text-align: center;
-  font-weight: 800;
-  letter-spacing: .32em;
-  font-size: 30px;
-  margin-top: -6px
+  margin: 4px 0 20px
 }
 
-.marcaG b {
-  color: var(--pri)
+.login-boas-vindas h1 {
+  margin: 0;
+  color: var(--login-ink);
+  font-size: 22px;
+  letter-spacing: .01em
 }
 
-.subG {
+.login-boas-vindas p {
+  margin: 4px 0 0;
+  font-size: 16px
+}
+
+.login-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px
+}
+
+.login-acao {
+  min-height: 45px;
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .01em
+}
+
+.login-acao span {
+  display: inline-block;
+  min-width: 24px;
+  margin-right: 4px;
+  font-size: 19px;
+  line-height: 1;
+  vertical-align: -2px
+}
+
+.login-acao-icone {
+  width: 22px;
+  height: 22px;
+  margin: 0 6px 0 0;
+  object-fit: contain;
+  vertical-align: -6px
+}
+
+.login-acao-principal {
+  border: 1px solid var(--login-red);
+  background: var(--login-red);
+  color: #fff;
+  box-shadow: 0 5px 10px rgba(112, 11, 34, .18)
+}
+
+.login-ou {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2px 0;
+  color: var(--login-ink);
+  font-size: 13px
+}
+
+.login-ou span {
+  height: 1px;
+  flex: 1;
+  background: #d3d8d9
+}
+
+.login-acao-contorno,
+.login-acao-visitante {
+  background: transparent;
+  color: #252525
+}
+
+.login-acao-contorno {
+  border: 2px solid var(--login-red);
+  color: var(--login-ink)
+}
+
+.login-acao-visitante {
+  border: 2px solid #aeb4b6
+}
+
+.login-ja-conta {
+  margin-top: 50px;
+  color: #555;
   text-align: center;
-  color: var(--tx2);
+  font-size: 14px
+}
+
+.login-ja-conta button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--login-ink);
+  font-weight: 700
+}
+
+.login-rodape {
+  margin-top: 24px;
+  color: #596368;
+  text-align: center;
+  font-size: 12px
+}
+
+.login-form-card {
+  margin-top: 20px !important;
+  background: #fff;
+  border-color: #e5dfe0;
+  color: var(--login-ink)
+}
+
+.login-voltar {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--login-ink);
   font-size: 13px;
-  margin: 6px 0 18px
+  margin-bottom: 12px
+}
+
+#tLogin .login-form-card h2 {
+  color: var(--login-ink)
+}
+
+#tLogin .login-form-card .perfil,
+#tLogin .login-form-card .abaLogin {
+  background: #fff;
+  border-color: #e4dfe0
+}
+
+#tLogin .login-form-card .perfil {
+  color: #777
+}
+
+#tLogin .login-form-card .perfil.on {
+  color: var(--login-ink);
+  border-color: var(--login-red);
+  box-shadow: 0 0 0 1px var(--login-red) inset
+}
+
+#tLogin .login-form-card .abaLogin button.on {
+  background: var(--login-red);
+  color: #fff
+}
+
+#tLogin .login-form-card input,
+#tLogin .login-form-card select {
+  background: #fff;
+  color: #333;
+  border-color: #d7d1d2
+}
+
+#tLogin .login-form-card .botao {
+  background: var(--login-red);
+  color: #fff
+}
+
+#tLogin .login-form-card .botao.sec {
+  background: #fff;
+  color: var(--login-ink);
+  border-color: #c9c4c5
 }
 
 .perfis {
@@ -2508,6 +2712,78 @@ nav button.on svg {
   background: var(--card);
   border-color: var(--linha);
   color: var(--tx2);
+}
+
+/* A tela inicial acompanha o tema escolhido sem alterar a composição do login. */
+:root:not([data-tema="claro"]) #tLogin {
+  --login-bg: #0b1115;
+  --login-ink: #f1e7e9;
+  --login-red: #d7193f;
+  background:
+    linear-gradient(145deg, transparent 0 74%, rgba(52, 78, 88, .22) 74% 74.2%, transparent 74.2%),
+    linear-gradient(35deg, transparent 0 12%, rgba(52, 78, 88, .16) 12% 12.2%, transparent 12.2%),
+    var(--login-bg);
+}
+
+:root:not([data-tema="claro"]) #tLogin.on {
+  background:
+    linear-gradient(145deg, transparent 0 74%, rgba(52, 78, 88, .22) 74% 74.2%, transparent 74.2%),
+    linear-gradient(35deg, transparent 0 12%, rgba(52, 78, 88, .16) 12% 12.2%, transparent 12.2%),
+    var(--login-bg);
+}
+
+:root:not([data-tema="claro"]) #tLogin .login-acao-principal {
+  box-shadow: 0 5px 12px rgba(0, 0, 0, .35);
+}
+
+:root:not([data-tema="claro"]) #tLogin .login-acao-contorno,
+:root:not([data-tema="claro"]) #tLogin .login-acao-visitante {
+  background: #151d21;
+  color: var(--login-ink);
+}
+
+:root:not([data-tema="claro"]) #tLogin .login-acao-visitante {
+  border-color: #68757a;
+}
+
+:root:not([data-tema="claro"]) #tLogin .login-ou span {
+  background: #435057;
+}
+
+:root:not([data-tema="claro"]) #tLogin .login-ja-conta {
+  color: #b6c0c3;
+}
+
+:root:not([data-tema="claro"]) #tLogin .login-rodape {
+  color: #8d9a9e;
+}
+
+:root:not([data-tema="claro"]) #tLogin .login-form-card {
+  background: #151d21;
+  border-color: #34434a;
+}
+
+:root:not([data-tema="claro"]) #tLogin .login-form-card .perfil,
+:root:not([data-tema="claro"]) #tLogin .login-form-card .abaLogin {
+  background: #11181c;
+  border-color: #34434a;
+}
+
+:root:not([data-tema="claro"]) #tLogin .login-form-card .perfil {
+  color: #9eabad;
+}
+
+:root:not([data-tema="claro"]) #tLogin .login-form-card input,
+:root:not([data-tema="claro"]) #tLogin .login-form-card select {
+  background: #0d1418;
+  color: #f1e7e9;
+  border-color: #34434a;
+}
+
+:root:not([data-tema="claro"]) #tLogin .login-form-card .botao.sec {
+  background: #11181c;
+  color: var(--login-ink);
+  border-color: #536168;
 }
 
 :root:not([data-tema="claro"]) #tAjustes input,

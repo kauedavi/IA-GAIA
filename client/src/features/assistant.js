@@ -226,7 +226,7 @@ function quadro(t) {
         ? 0.25 + 0.15 * Math.sin(t / 200)
         : 0;
   nivel += (alvo - nivel) * 0.2;
-  desenharOrbe(login ? $("orbeLogin") : $("orbe"), t);
+  if (!login) desenharOrbe($("orbe"), t);
 }
 requestAnimationFrame(quadro);
 function estado(s) {

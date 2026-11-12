@@ -104,6 +104,9 @@ var LOGIN = { perfil: "aluno", modo: "entrar" };
 function abrirLogin(modo) {
   LOGIN.modo = modo;
   $("cartaoLogin").hidden = false;
+  $("cartaoLogin").classList.remove("login-form-card-enter");
+  void $("cartaoLogin").offsetWidth;
+  $("cartaoLogin").classList.add("login-form-card-enter");
   $("cartaoLogin").scrollIntoView({ behavior: "smooth", block: "start" });
   renderLogin();
 }

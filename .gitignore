@@ -1,2 +1,7 @@
 .env
+.env.*
+!.env.example
 node_modules/
+*.jks
+*.keystore
+*.p12

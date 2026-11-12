@@ -19,6 +19,11 @@
   
   --sombra: 0 10px 30px rgba(0, 0, 0, 0.75);
   --r: 18px;
+  --motion-fast: 160ms;
+  --motion-normal: 280ms;
+  --motion-slow: 420ms;
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+  --motion-ease-in: cubic-bezier(.4, 0, 1, 1);
 }
 
 :root[data-tema="claro"] {
@@ -154,12 +159,10 @@ textarea:focus {
 
 .ponto.ok {
   background: var(--ok);
-  box-shadow: 0 0 8px var(--ok)
 }
 
 .ponto.ac {
   background: var(--amb);
-  box-shadow: 0 0 8px var(--amb)
 }
 
 h2 {
@@ -480,7 +483,7 @@ nav button.on {
 }
 
 nav button.on svg {
-  filter: drop-shadow(0 0 6px var(--pri))
+  filter: none
 }
 
 /* cartões e listas */
@@ -1030,6 +1033,7 @@ nav button.on svg {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 16px 18px 12px;
 }
 
@@ -1066,6 +1070,14 @@ nav button.on svg {
   color: #fff;
 }
 
+.welcome-message {
+  animation: chat-message-in var(--motion-normal) var(--motion-ease) both;
+}
+
+.welcome-bubbles .chat-bubble:nth-child(2) {
+  animation: chat-message-in var(--motion-normal) var(--motion-ease) 70ms both;
+}
+
 .chat-now {
   display: none;
 }
@@ -1099,6 +1111,7 @@ nav button.on svg {
 .chat-quick-actions .chip:hover,
 .chat-quick-actions .chip:focus-visible {
   background: var(--chat-red-dark);
+  transform: translateY(-2px);
 }
 
 .quick-icon {
@@ -1122,6 +1135,15 @@ nav button.on svg {
   background: #f1f1f1;
   border: 0;
   color: var(--chat-ink);
+}
+
+.chat-home .msg {
+  animation: chat-message-in var(--motion-normal) var(--motion-ease) both;
+  contain: layout paint;
+}
+
+.chat-home .msg.digitando {
+  animation-duration: var(--motion-fast);
 }
 
 .chat-brand-footer {
@@ -1191,6 +1213,50 @@ nav button.on svg {
 
 .legacy-3d {
   display: none;
+}
+
+@keyframes login-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes login-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes login-field-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chat-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 420px) {
@@ -2132,6 +2198,67 @@ nav button {
   color: var(--login-ink)
 }
 
+#tLogin.on .login-topo,
+#tLogin.on .login-boas-vindas,
+#tLogin.on .login-acoes,
+#tLogin.on .login-ja-conta,
+#tLogin.on .login-rodape {
+  animation: login-content-in var(--motion-slow) var(--motion-ease) both;
+}
+
+#tLogin.on .login-topo {
+  animation-delay: 40ms;
+}
+
+#tLogin.on .login-boas-vindas {
+  animation-delay: 100ms;
+}
+
+#tLogin.on .login-acoes {
+  animation-delay: 150ms;
+}
+
+#tLogin.on .login-ja-conta {
+  animation-delay: 200ms;
+}
+
+#tLogin.on .login-rodape {
+  animation-delay: 240ms;
+}
+
+.login-acao {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease;
+}
+
+.login-acao:hover,
+.login-acao:focus-visible {
+  transform: translateY(-2px);
+}
+
+.login-form-card-enter {
+  animation: login-card-in var(--motion-normal) var(--motion-ease) both;
+}
+
+#formLogin .campo {
+  animation: login-field-in var(--motion-fast) var(--motion-ease) both;
+}
+
+#formLogin .campo:nth-child(2) {
+  animation-delay: 30ms;
+}
+
+#formLogin .campo:nth-child(3) {
+  animation-delay: 60ms;
+}
+
+#formLogin .campo:nth-child(4) {
+  animation-delay: 90ms;
+}
+
 .login-voltar {
   border: 0;
   padding: 0;
@@ -2210,7 +2337,7 @@ nav button {
 .perfil.on {
   border-color: var(--pri);
   color: var(--tx);
-  box-shadow: 0 0 0 1px var(--pri) inset, 0 0 18px rgba(46, 230, 197, .18)
+  box-shadow: 0 0 0 1px var(--pri) inset
 }
 
 .perfil.on svg {
@@ -2618,6 +2745,93 @@ nav button.on svg {
     padding-right: 4px;
     font-size: 10px;
   }
+}
+
+/* Sistema de movimento: transições discretas e consistentes entre as telas. */
+.tela {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  display: block;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(14px, 0, 0);
+  transition:
+    opacity var(--motion-normal) var(--motion-ease),
+    transform var(--motion-normal) var(--motion-ease),
+    visibility 0s linear var(--motion-normal);
+}
+
+.tela.on {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate3d(0, 0, 0);
+  transition-delay: 0s;
+  z-index: 1;
+  will-change: opacity, transform;
+}
+
+.tela:not(.on) {
+  transition-timing-function: var(--motion-ease-in);
+}
+
+button,
+input,
+select,
+textarea,
+.card,
+.item,
+.chip,
+.botao,
+.redondo,
+.fab,
+nav button {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    color var(--motion-fast) ease;
+}
+
+button:active,
+.botao:active,
+.chip:active,
+.redondo:active,
+.fab:active {
+  transform: scale(.97);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--pri) 70%, transparent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+
+  .tela,
+  .tela.on {
+    transform: none;
+  }
+}
+
+.pagina-oculta *,
+.pagina-oculta *::before,
+.pagina-oculta *::after {
+  animation-play-state: paused !important;
 }
 
 #tAjustes .configuracao-secao {

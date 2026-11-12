@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./src/config/env.js";
 import express from "express";
 import cors from "cors";
 import { chatRoutes } from "./src/routes/chatRoutes.js";

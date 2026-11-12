@@ -229,6 +229,9 @@ function quadro(t) {
   if (!login) desenharOrbe($("orbe"), t);
 }
 requestAnimationFrame(quadro);
+document.addEventListener("visibilitychange", function () {
+  document.documentElement.classList.toggle("pagina-oculta", document.hidden);
+});
 function estado(s) {
   ESTADO = s;
   $("rotulo").textContent =
@@ -305,9 +308,13 @@ function montarNav() {
     });
 }
 function irPara(t) {
+  var destino = t ? document.getElementById(t) : null;
+  if (!destino || (t === telaAtual && destino.classList.contains("on"))) return;
   telaAtual = t;
   document.querySelectorAll(".tela").forEach(function (e) {
-    e.classList.toggle("on", e.id === t);
+    var ativa = e.id === t;
+    e.classList.toggle("on", ativa);
+    e.setAttribute("aria-hidden", ativa ? "false" : "true");
   });
   document.querySelectorAll("#nav button").forEach(function (b) {
     b.classList.toggle("on", b.dataset.t === t);

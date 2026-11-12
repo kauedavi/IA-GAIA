@@ -29,8 +29,9 @@ renderRota = function () {
     '</div></div><button class="botao sec peq" id="btLimparRota">Limpar</button></div>';
   if (ps.length) {
     h += '<div class="resumoRota"><span>' + esc(res.txt) + "</span></div>";
-    h +=
-      '<div class="acoesRota"><button class="botao" id="btNav">▶ Iniciar navegação</button><button class="botao sec peq" id="btInverter" title="Trocar origem e destino">⇅ Inverter</button></div>';
+    if (!M3.nav)
+      h +=
+        '<div class="acoesRota"><button class="botao" id="btNav">▶ Iniciar navegação</button><button class="botao sec peq" id="btInverter" title="Trocar origem e destino">⇅ Inverter</button></div>';
     h +=
       '<ol class="passos passosNav">' +
       ps

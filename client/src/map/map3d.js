@@ -18,6 +18,7 @@ var M3 = {
   nav: null,
   ult: 0,
   mexeu: 0,
+  focoAntesTodos: null,
 };
 var ALT3 = 24,
   GAP3 = 330,
@@ -39,6 +40,23 @@ var TIPO3N = {
   servico: "Banheiros e serviços",
   convivencia: "Convivência",
   acesso: "Entradas",
+};
+function toastMapa(t, persistente) {
+  var e = $("mapToast");
+  if (!e) return;
+  e.textContent = t;
+  e.classList.add("on");
+  clearTimeout(toastMapa.t);
+  if (persistente) return;
+  toastMapa.t = setTimeout(function () {
+    e.classList.remove("on");
+  }, 3200);
+}
+toastMapa.limpar = function () {
+  var e = $("mapToast");
+  if (!e) return;
+  clearTimeout(toastMapa.t);
+  e.classList.remove("on");
 };
 function usar3D() {
   return !!(D.rede && !PLANTA && CFG.mapa3d !== false);
@@ -1636,6 +1654,7 @@ function atualizar3D() {
   $("dica3d").style.display = u && M3.dica && !M3.nav ? "block" : "none";
   $("mapaCx").classList.toggle("m3", u);
   $("pilAndar").style.display = u ? "none" : "";
+  atualizarControlesAndar();
   if (!u) {
     sairNav(true);
     return;
@@ -1673,6 +1692,55 @@ function atualizar3D() {
       };
     });
   pedir3D();
+}
+function andaresMapaOrdenados() {
+  return andares3();
+}
+function atualizarControlesAndar() {
+  var btTodos = $("btTodosAndares"),
+    btSubir = $("andarSubir"),
+    btDescer = $("andarDescer");
+  if (!btTodos) return;
+  var todos = usar3D() ? M3.foco === "todos" : ANDAR === "todos",
+    atual = usar3D() ? +M3.foco : +ANDAR,
+    andares = andaresMapaOrdenados(),
+    i = andares.indexOf(atual);
+  btTodos.classList.toggle("on", todos);
+  btTodos.setAttribute("aria-pressed", todos ? "true" : "false");
+  btSubir.disabled = todos || i < 0 || i >= andares.length - 1;
+  btDescer.disabled = todos || i <= 0;
+}
+function mudarAndarMapa(delta) {
+  var andares = andaresMapaOrdenados(),
+    atual = usar3D() ? +M3.foco : +ANDAR,
+    i = andares.indexOf(atual),
+    proximo = i + delta;
+  if (i < 0 || proximo < 0 || proximo >= andares.length) return;
+  if (usar3D()) {
+    trocarAndar3(String(andares[proximo]));
+  } else {
+    ANDAR = String(andares[proximo]);
+    desenharMapa();
+  }
+}
+function alternarTodosAndares() {
+  if (usar3D()) {
+    if (M3.foco === "todos") {
+      M3.foco =
+        M3.focoAntesTodos != null
+          ? M3.focoAntesTodos
+          : String(+sala(CFG.de).andar || 0);
+      M3.focoAntesTodos = null;
+    } else {
+      M3.focoAntesTodos = M3.foco;
+      M3.foco = "todos";
+    }
+    atualizar3D();
+    enquadrar3D(true, !!DESTINO);
+  } else {
+    ANDAR = ANDAR === "todos" ? "0" : "todos";
+    desenharMapa();
+  }
 }
 function trocarAndar3(a) {
   M3.foco = a;
@@ -1862,71 +1930,13 @@ function toque3D(e) {
       enquadrar3D(true, true);
     }, 30);
 }
-// zoom pelos botões vale para o 2D e o 3D
-(function () {
-  var zm = $("zMais").onclick,
-    zn = $("zMenos").onclick,
-    zz = $("zZero").onclick;
-  function z3d(f) {
-    M3.alvo = null;
-    M3.s = Math.max(0.15, Math.min(6, M3.s * f));
-    M3.px *= f;
-    M3.py *= f;
-    pedir3D();
-  }
-  $("zMais").onclick = function () {
-    usar3D() ? z3d(1.35) : zm();
-  };
-  $("zMenos").onclick = function () {
-    usar3D() ? z3d(1 / 1.35) : zn();
-  };
-  $("zZero").onclick = function () {
-    if (usar3D()) {
-      if (M3.nav) {
-        mostrarPasso(M3.nav.i);
-        return;
-      }
-      M3.yaw = 0;
-      M3.pitch = 0.86;
-      enquadrar3D(true, !!DESTINO);
-    } else zz();
-  };
-})();
-$("bt3DGirar").onclick = function () {
-  irCam3({
-    yaw: M3.yaw + Math.PI / 2,
-    pitch: M3.pitch,
-    s: M3.s,
-    px: M3.px,
-    py: M3.py,
-  });
+$("andarSubir").onclick = function () {
+  mudarAndarMapa(1);
 };
-$("bt3DTopo").onclick = function () {
-  irCam3({
-    yaw: M3.yaw,
-    pitch: M3.pitch > 0.5 ? 0.06 : 0.86,
-    s: M3.s,
-    px: M3.px,
-    py: M3.py,
-  });
+$("andarDescer").onclick = function () {
+  mudarAndarMapa(-1);
 };
-$("bt3DNorte").onclick = function () {
-  var cam = enquadrarPts(
-    DESTINO && rota3m().length > 1
-      ? rota3m()
-          .filter(function (p) {
-            return andarVisivel(p.a);
-          })
-          .map(function (p) {
-            return [p.x, p.y, z3(p.a)];
-          })
-      : ptsAndar3(M3.foco === "todos" ? 0 : +M3.foco),
-    { yaw: 0, pitch: 0.86, max: 1.5 },
-    60,
-  );
-  irCam3(cam);
-  toast("Mapa com a Rua Gandavo em cima, igual à planta");
-};
+$("btTodosAndares").onclick = alternarTodosAndares;
 window.addEventListener("resize", function () {
   if (usar3D()) pedir3D();
 });
@@ -1954,7 +1964,7 @@ function definirOrigem(id) {
     atualizar3D();
     enquadrar3D(true);
   }
-  toast("📍 Você está em: " + rotuloCurto(s.nome));
+  toastMapa("📍 Você está em: " + rotuloCurto(s.nome));
 }
 function ondeEstou() {
   var grupos = [
@@ -2043,6 +2053,13 @@ function ondeEstou() {
   };
 }
 $("btOnde").onclick = ondeEstou;
+$("btNavBase").onclick = function () {
+  if (!DESTINO) {
+    toastMapa("Escolha um destino para iniciar a navegação.");
+    return;
+  }
+  iniciarNav();
+};
 
 // ── navegação passo a passo ──
 function iniciarNav() {
@@ -2056,9 +2073,11 @@ function iniciarNav() {
   M3.nav = { i: 0, passos: ps };
   M3.dica = false;
   $("mapaCx").classList.add("navOn");
-  $("nav3d").style.display = "block";
+  $("nav3d").style.display = "flex";
+  $("btNavBase").style.display = "none";
   atualizar3D();
   mostrarPasso(0);
+  renderRota();
   try {
     $("mapaCx").scrollIntoView({ block: "nearest", behavior: "smooth" });
   } catch (e) {}
@@ -2066,8 +2085,10 @@ function iniciarNav() {
 function sairNav(silencio) {
   if (!M3.nav) return;
   M3.nav = null;
+  toastMapa.limpar();
   $("nav3d").style.display = "none";
   $("mapaCx").classList.remove("navOn");
+  $("btNavBase").style.display = "";
   if (!silencio) {
     focoParaRota();
     atualizar3D();
@@ -2087,26 +2108,23 @@ function sairNav(silencio) {
       ),
     );
   }
+  renderRota();
 }
 function mostrarPasso(i) {
   var N = M3.nav;
   if (!N) return;
   N.i = Math.max(0, Math.min(N.passos.length - 1, i));
   var p = N.passos[N.i],
-    r = rota3m(),
-    res = resumoNav(N.passos.slice(N.i));
-  $("nvIc").textContent = p.ic;
-  $("nvTx").textContent = p.txt;
-  $("nvSub").textContent = p.sub || "";
-  $("nvSub").style.display = p.sub ? "block" : "none";
-  $("nvInfo").textContent =
-    "Passo " +
-    (N.i + 1) +
-    " de " +
-    N.passos.length +
-    (p.tipo === "fim" ? "" : " · " + res.txt.replace(/ · \d+ troca.*$/, ""));
+    r = rota3m();
+  toastMapa(
+    p.txt +
+      (p.sub && p.tipo !== "fim"
+        ? " " + p.sub.replace(/^\S+ (?=[A-ZÁÉÍÓÚ])/, "")
+        : ""),
+    true,
+  );
   $("nvAnt").disabled = N.i === 0;
-  $("nvProx").textContent = N.i === N.passos.length - 1 ? "Fim" : "Próximo ›";
+  $("nvProx").textContent = "Próximo";
   // andar e câmera do passo: o mapa gira para a direção em que a pessoa anda
   var andar = String(p.tipo === "vert" ? p.de : p.andar);
   M3.foco = andar;
@@ -2154,22 +2172,16 @@ $("nvAnt").onclick = function () {
 $("nvProx").onclick = function () {
   if (M3.nav.i >= M3.nav.passos.length - 1) {
     sairNav();
-    toast("🏁 Você chegou!");
+    toastMapa("🏁 Você chegou!");
     return;
   }
   mostrarPasso(M3.nav.i + 1);
 };
-$("nvSair").onclick = function () {
-  sairNav();
+$("nvCancelar").onclick = function () {
+  if (
+    window.confirm(
+      "Tem certeza de que deseja encerrar a navegação? O progresso atual será perdido.",
+    )
+  )
+    sairNav();
 };
-$("nvVoz").onclick = function () {
-  CFG.navVoz = !CFG.navVoz;
-  salvarCfg();
-  this.classList.toggle("on", !!CFG.navVoz);
-  if (CFG.navVoz && M3.nav) {
-    var p = M3.nav.passos[M3.nav.i];
-    falarTexto(p.txt);
-  }
-  toast(CFG.navVoz ? "🔊 Vou falar cada passo" : "🔇 Passos sem voz");
-};
-$("nvVoz").classList.toggle("on", !!CFG.navVoz);

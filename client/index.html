@@ -81,17 +81,21 @@
       </section>
 
       <section id="tMapa" class="tela mapa-tela">
-        <div class="topo mapa-topo"><div><h2>Mapa</h2><p class="mapa-subtitulo">Encontre salas e lugares da unidade</p></div><span class="esp"></span><button id="btOnde" class="botao sec" type="button">📍 Onde estou?</button></div>
-        <div id="avisoMapa" class="nota"></div>
+        <div class="topo mapa-topo"><div><h2>Mapa</h2><p class="mapa-subtitulo">Encontre salas e lugares da unidade</p></div><span class="esp"></span><button id="btOnde" class="mapa-onde" type="button">📍 Onde estou?</button></div>
         <div id="avisoPick" class="nota" style="display:none"></div>
-        <div class="card mapa-busca">
-          <label class="mapa-label" for="buscaSala">Para onde você vai?</label>
-          <input id="buscaSala" type="search" autocomplete="off" placeholder="Ex.: laboratório 7" />
-          <div id="resBusca"></div>
-          <div class="mapa-origem">
-            <label class="mapa-label" for="selDe">Você está em</label>
-            <select id="selDe"></select>
-            <span id="origemTx" class="nota"></span>
+        <div class="mapa-seletores">
+          <div class="mapa-seletor">
+            <label class="mapa-label" for="selDe">Sua localização atual</label>
+            <div class="mapa-input mapa-localizacao"><span aria-hidden="true">●</span><select id="selDe" aria-label="Sua localização atual"></select></div>
+            <span id="origemTx" class="mapa-ajuda"></span>
+            <span class="mapa-ajuda">▣ Lab. de Projetos - Manufatura</span>
+          </div>
+          <div class="mapa-seletor">
+            <label class="mapa-label" for="buscaSala">Escolha o destino</label>
+            <div class="mapa-input"><input id="buscaSala" type="search" autocomplete="off" placeholder="Ex.: Lab. de Software" /></div>
+            <div id="resBusca"></div>
+            <span class="mapa-ajuda">♧ Ex.: Lab. de Software</span>
+            <span class="mapa-ajuda">▣ Lab. de Projetos - Manufatura</span>
           </div>
         </div>
         <div class="mapa-area">
@@ -102,17 +106,19 @@
           <div id="mapaCx" class="mapaCx">
             <svg id="mapa" viewBox="0 0 1000 1300" role="img" aria-label="Mapa da unidade"></svg>
             <canvas id="mapa3d" aria-label="Mapa tridimensional da unidade"></canvas>
-            <div id="nav3d" style="display:none"><button id="nvAnt" type="button">‹</button><span id="nvIc"></span><strong id="nvTx"></strong><small id="nvSub"></small><span id="nvInfo"></span><button id="nvProx" type="button">Próximo ›</button><button id="nvVoz" type="button">🔊</button><button id="nvSair" type="button">Sair</button></div>
+            <div id="mapToast" role="status" aria-live="polite" aria-atomic="true"></div>
           </div>
-          <div class="mapControles"><button id="zMais" type="button" aria-label="Aumentar zoom">+</button><button id="zMenos" type="button" aria-label="Diminuir zoom">−</button><button id="zZero" type="button" aria-label="Restaurar zoom">1:1</button><button id="bt3DGirar" type="button">Girar</button><button id="bt3DTopo" type="button">Topo</button><button id="bt3DNorte" type="button">Norte <span class="agulha" aria-hidden="true"></span></button></div>
+          <div id="nav3d" style="display:none">
+            <div class="nav3d-passos"><button id="nvAnt" type="button">Anterior</button><button id="nvProx" type="button">Próximo</button></div>
+            <button id="nvCancelar" type="button">Encerrar navegação</button>
+          </div>
+          <div id="andarControles" class="andar-controles" aria-label="Controles de pavimento"><button id="andarSubir" type="button" aria-label="Subir um andar">⌃</button><button id="andarDescer" type="button" aria-label="Descer um andar">⌄</button><button id="btTodosAndares" type="button" aria-label="Ver todos os andares" aria-pressed="false"><span class="icone-olho" aria-hidden="true"></span></button></div>
         </div>
-        <div class="mapa-painel">
-          <div class="mapa-painel-titulo">Pavimento</div>
-          <div id="andares" class="chips"></div>
-        </div>
-        <div id="pilAndar" class="pilula"></div>
+        <div id="andares" hidden></div>
+        <div id="pilAndar" class="pilula" aria-hidden="true"></div>
         <div id="rota"></div>
         <div id="dica3d" class="nota"></div>
+        <button id="btNavBase" class="mapa-iniciar" type="button">Iniciar navegação</button>
       </section>
 
       <section id="tHorarios" class="tela"><div class="topo"><h2>Horários</h2><span class="esp"></span><button id="pilTurma" class="pilula" type="button"></button></div><div id="dias" class="chips"></div><div id="resumoDia" class="nota"></div><div id="listaAulas"></div></section>
@@ -143,10 +149,6 @@
             <button id="btTestarVoz" class="botao sec" type="button">Testar voz</button>
             <button id="swVoz" class="botao sec" type="button"></button>
           </div>
-        </div>
-        <div class="card configuracao-secao">
-          <h3>Preferências</h3>
-          <label id="linhaLembrete">Lembrete antes da aula <input id="aLembrete" type="number" /></label>
         </div>
         <div id="ajEdicao"><h3>Salas e lugares</h3><div id="listaSalas" class="lista"></div><button id="btNovaSala" class="botao sec" type="button">+ Adicionar sala ou lugar</button><h3>Blocos do mapa</h3><div id="listaBlocos" class="lista"></div><button id="btNovoBloco" class="botao sec" type="button">+ Adicionar bloco</button><h3>Planta real</h3><button id="btPlanta" class="botao sec" type="button">Carregar planta</button><button id="btSemPlanta" class="botao perigo" type="button">Remover planta</button><input id="arqPlanta" type="file" accept="image/*" hidden /></div>
         <div id="ajDados"><h3>Dados</h3><button id="btExportar" class="botao sec" type="button">Exportar</button><button id="btImportar" class="botao sec" type="button">Importar</button><button id="btExemplo" class="botao perigo" type="button">Voltar ao exemplo</button><input id="arqImport" type="file" accept=".json,application/json,text/plain" hidden /></div>

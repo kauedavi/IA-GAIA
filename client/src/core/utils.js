@@ -53,15 +53,21 @@ function ondeFica(s) {
   var b = bloco(s.bloco);
   return (b ? b.nome : "área externa") + ", " + nomeAndar(s.andar);
 }
-function toast(t) {
+function toast(t, persistente) {
   var e = $("toast");
   e.textContent = t;
   e.classList.add("on");
   clearTimeout(toast.t);
+  if (persistente) return;
   toast.t = setTimeout(function () {
     e.classList.remove("on");
   }, 2600);
 }
+toast.limpar = function () {
+  var e = $("toast");
+  clearTimeout(toast.t);
+  e.classList.remove("on");
+};
 function agoraData() {
   return window.__agora ? new Date(window.__agora) : new Date();
 }

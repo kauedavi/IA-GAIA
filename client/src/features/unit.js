@@ -307,15 +307,3 @@ function agendarLembretes() {
     .slice(0, 60);
   N.agendarLembretes(JSON.stringify(l));
 }
-$("aLembrete").onchange = function () {
-  CFG.lembrete = +this.value;
-  salvarCfg();
-  if (CFG.lembrete > 0 && N && N.podeNotificar && !N.podeNotificar())
-    N.pedirNotificacao();
-  agendarLembretes();
-  toast(
-    CFG.lembrete
-      ? "Vou avisar " + CFG.lembrete + " min antes"
-      : "Lembretes desligados",
-  );
-};

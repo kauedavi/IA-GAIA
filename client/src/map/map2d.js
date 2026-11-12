@@ -757,6 +757,7 @@ function renderAndares() {
         desenharMapa();
       };
     });
+  if (typeof atualizarControlesAndar === "function") atualizarControlesAndar();
   var sel = $("selDe");
   sel.innerHTML = D.salas
     .map(function (s) {
@@ -788,18 +789,6 @@ function renderRota() {
       : nomeAndar(+ANDAR).replace(/^./, function (c) {
           return c.toUpperCase();
         });
-  $("avisoMapa").innerHTML =
-    D.mapaFonte && D.rede && !PLANTA
-      ? '<div class="nota" style="margin-top:8px">🗺️ ' +
-        esc(D.mapaFonte) +
-        " Clique numa sala para ver o caminho; use os botões Subsolo / Térreo / Pavimento superior para trocar de andar.</div>"
-      : D.mapaAproximado && !PLANTA
-        ? '<div class="aviso">Mapa montado com os dados públicos da ' +
-          esc(D.unidade) +
-          " (" +
-          esc(D.info.area.toLowerCase()) +
-          "; ambientes do Censo Escolar 2024). A planta oficial não é pública, então a <b>posição</b> de cada lugar é aproximada: ajuste em Configurações › Salas ou carregue a foto da planta.</div>"
-        : "";
   if (para) {
     h =
       '<div class="card"><div style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div class="tag">Destino</div><div style="font-weight:700;font-size:17px">' +
@@ -899,13 +888,6 @@ function zoom(f, px, py) {
   VB = { x: px - (px - VB.x) * k, y: py - (py - VB.y) * k, w: nw, h: VB.h * k };
   aplicarVB();
 }
-$("zMais").onclick = function () {
-  zoom(0.7);
-};
-$("zMenos").onclick = function () {
-  zoom(1 / 0.7);
-};
-$("zZero").onclick = ajustarVB;
 function pontoSvg(e) {
   var m = $("mapa"),
     p = m.createSVGPoint();

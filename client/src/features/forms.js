@@ -121,11 +121,8 @@ function renderAjustes() {
   $("ajEdicao").style.display =
     pf === "empresa" || pf === "visitante" ? "none" : "";
   $("ajDados").style.display = pf === "visitante" ? "none" : "";
-  $("linhaLembrete").style.display =
-    pf === "empresa" || pf === "visitante" ? "none" : "";
   $("btSair").textContent =
     pf === "visitante" ? "Sair do modo visitante" : "Sair da conta";
-  $("aLembrete").value = String(CFG.lembrete);
   montarVozes();
 }
 ["aNome", "aUnidade", "aTurma"].forEach(function (id) {

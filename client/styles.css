@@ -775,6 +775,33 @@ nav button.on svg {
   cursor: grabbing
 }
 
+#mapToast {
+  position: absolute;
+  z-index: 5;
+  top: 14px;
+  left: 50%;
+  width: min(92%, 360px);
+  padding: 14px 18px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #e00000, #c90000);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(113, 0, 0, .24);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -10px);
+  transition: opacity .2s ease, transform .2s ease;
+}
+
+#mapToast.on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 #dica3d {
   position: absolute;
   left: 10px;
@@ -1172,7 +1199,291 @@ nav button.on svg {
     padding-right: 12px;
     gap: 8px;
   }
+}
 
+/* Reformulação da tela do mapa */
+.mapa-tela {
+  display: none;
+  min-height: 100%;
+  height: 100%;
+  padding: 8px 11px calc(72px + env(safe-area-inset-bottom));
+  background: #fff;
+  color: #202124;
+  overflow: hidden
+}
+
+.mapa-tela.on {
+  display: flex;
+  flex-direction: column
+}
+
+.mapa-topo {
+  flex: 0 0 auto;
+  padding: 0 1px 5px;
+  min-height: 42px
+}
+
+  .mapa-topo h2 {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.15
+  }
+
+  .mapa-subtitulo {
+    font-size: 9px;
+    color: #202124
+  }
+
+  .mapa-onde {
+    border: 1px solid #dfe1e5;
+    border-radius: 9px;
+    padding: 8px 9px;
+    background: #fff;
+    color: #202124;
+    font-size: 11px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08)
+  }
+
+.mapa-seletores {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px
+}
+
+  .mapa-seletor {
+    min-width: 0;
+    padding: 11px 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 13px;
+    background: #fff;
+    box-shadow: 0 2px 7px rgba(0, 0, 0, .1)
+  }
+
+  .mapa-label {
+    margin-bottom: 7px;
+    color: #202124;
+    font-size: 11px;
+    font-weight: 700
+  }
+
+  .mapa-input {
+    display: flex;
+    align-items: center;
+    min-height: 37px;
+    border: 1px solid #dedede;
+    border-radius: 9px;
+    background: #f5f5f5;
+    overflow: hidden
+  }
+
+  .mapa-input > span {
+    padding-left: 8px;
+    color: #777
+  }
+
+  .mapa-input input,
+  .mapa-input select {
+    width: 100%;
+    min-width: 0;
+    height: 35px;
+    padding: 5px 8px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #555;
+    font-size: 11px
+  }
+
+  .mapa-ajuda {
+    display: block;
+    margin-top: 4px;
+    overflow: hidden;
+    color: #555;
+    font-size: 9px;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap
+  }
+
+  .mapa-ajuda:first-of-type {
+    margin-top: 6px
+  }
+
+.mapa-area {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0
+}
+
+#mapaCx {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  border: 1px solid #e1e1e1;
+  border-radius: 11px;
+  background: #e8f1ef
+}
+
+  .mapa-modos {
+    top: 7px;
+    right: 8px;
+    border: 0;
+    box-shadow: none
+  }
+
+  .mapa-modos .chip {
+    padding: 5px 9px;
+    font-size: 10px
+  }
+
+  .mapControles {
+    right: 8px;
+    bottom: 7px;
+    gap: 4px;
+    max-width: none
+  }
+
+  .mapControles button {
+    min-width: 32px;
+    min-height: 31px;
+    padding: 4px 6px;
+    border-radius: 7px;
+    font-size: 9px
+  }
+
+  .mapControles button:first-child,
+  .mapControles button:nth-child(2) {
+    font-size: 17px
+  }
+
+  .andar-controles {
+    position: absolute;
+    top: 43px;
+    bottom: 10px;
+    right: 8px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 7px
+  }
+
+  .andar-controles button {
+    width: 38px;
+    height: 38px;
+    border: 1px solid #e0e0e0;
+    border-radius: 7px;
+    background: #fff;
+    color: #111;
+    font-size: 28px;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .12)
+  }
+
+  .andar-controles button:last-child {
+    position: static;
+    margin-top: auto;
+    right: 0;
+    font-size: 25px
+  }
+
+  .icone-olho {
+    display: block;
+    width: 23px;
+    height: 14px;
+    margin: auto;
+    border: 3px solid currentColor;
+    border-radius: 50% / 65%
+  }
+
+  .icone-olho:after {
+    content: "";
+    display: block;
+    width: 6px;
+    height: 6px;
+    margin: 1px auto;
+    border-radius: 50%;
+    background: currentColor
+  }
+
+  .andar-controles button.on {
+    background: #c8102e;
+    border-color: #c8102e;
+    color: #fff
+  }
+
+  .andar-controles button:disabled {
+    opacity: .45
+  }
+
+  .mapa-painel {
+    margin-top: 8px;
+    padding: 8px 8px 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 13px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .05)
+  }
+
+  .mapa-painel-titulo {
+    color: #202124;
+    font-size: 9px;
+    letter-spacing: .04em
+  }
+
+  .mapa-painel .chips {
+    gap: 6px;
+    padding-top: 6px
+  }
+
+  .mapa-painel .chip {
+    padding: 5px 10px;
+    border: 1px solid #dedede;
+    border-radius: 999px;
+    background: #fff;
+    color: #202124;
+    font-size: 9px
+  }
+
+  .mapa-painel .chip.on {
+    background: #c8102e;
+    border-color: #c8102e;
+    color: #fff
+  }
+
+  #pilAndar {
+    display: none
+  }
+
+.mapa-iniciar {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 43px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 6px;
+  background: #d90000;
+  color: #fff;
+  font-size: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .1)
+}
+
+  .mapa-iniciar:active {
+    background: #b90000
+  }
+
+  .mapa-tela #rota {
+    display: none
+  }
+
+  .mapa-tela #dica3d {
+    display: none !important
+  }
+
+  @media (max-width: 420px) {
   .senai-logo {
     width: 82px;
   }
@@ -1194,103 +1505,46 @@ nav button.on svg {
 }
 
 #nav3d {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
+  margin-top: 8px;
   display: none;
-  background: var(--card);
-  border: 1px solid var(--linha);
-  border-radius: 16px;
-  box-shadow: var(--sombra);
-  padding: 10px
+  flex-direction: column;
+  gap: 8px
 }
 
-#mapaCx.navOn {
-  height: 66vh
+.nav3d-passos {
+  display: flex;
+  gap: 8px
 }
 
 #mapaCx.navOn #dica3d {
   display: none !important
 }
 
-.nvTopo {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start
+#mapaCx.navOn #mapToast {
+  top: 12px;
 }
 
-#nvIc {
-  flex: 0 0 auto;
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  background: var(--amb);
-  color: #2b1a00;
-  display: grid;
-  place-items: center;
-  font-size: 24px;
-  font-weight: 900
-}
-
-.nvTxts {
+#nav3d button {
   flex: 1;
-  min-width: 0
-}
-
-#nvTx {
-  font-weight: 700;
-  font-size: 15px;
-  line-height: 1.3
-}
-
-#nvSub {
-  color: var(--tx2);
-  font-size: 13px;
-  margin-top: 3px
-}
-
-.nvBar {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  margin-top: 9px
-}
-
-.nvBar button {
-  border: 1px solid var(--linha);
-  background: var(--card2);
-  color: var(--tx);
-  border-radius: 11px;
-  height: 38px;
+  border: 0;
+  background: #d90000;
+  color: #fff;
+  border-radius: 6px;
+  min-height: 43px;
   min-width: 38px;
   font-size: 16px;
-  font-weight: 700
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .1)
 }
 
-.nvBar button.pri {
-  background: var(--pri);
-  color: #04221d;
-  border-color: var(--pri);
-  padding: 0 12px;
-  font-size: 14px
-}
-
-.nvBar button.on {
-  background: var(--pri);
-  color: #04221d
-}
-
-.nvBar button:disabled {
+#nav3d button:disabled {
   opacity: .4
 }
 
-#nvInfo {
-  flex: 1;
-  font-size: 11.5px;
-  color: var(--tx3);
-  text-align: center;
-  line-height: 1.25
+#nav3d #nvCancelar {
+  width: 100%;
+  background: #6b6b6b;
+  color: #fff
 }
 
 .resumoRota {
@@ -2117,6 +2371,7 @@ nav button.on svg {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-bottom: 24px;
 }
 
 #tAjustes .configuracao-secao h3 {
@@ -2145,6 +2400,12 @@ nav button.on svg {
 
 #tAjustes .configuracao-acoes {
   margin-top: 4px;
+}
+
+#tAjustes #ajEdicao,
+#tAjustes #ajDados,
+#tAjustes #btSair {
+  margin-top: 24px;
 }
 
 /* Mantém as telas internas compatíveis com o tema escuro global. */

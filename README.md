@@ -1,5 +1,7 @@
 # IA-GAIA
 
+![](client/src/img/logo-android.png)
+
 Assistente para consulta de horários e orientação de salas da Escola SENAI
 Anchieta.
 
@@ -98,26 +100,13 @@ Se o Gradle informar que está usando Java 8, selecione o JDK do Android Studio
 em **Settings > Build, Execution, Deployment > Build Tools > Gradle > Gradle
 JDK** ou configure a variável `JAVA_HOME`.
 
-### Sincronizar e abrir o projeto
-
-Depois de alterar HTML, CSS ou JavaScript em `client/`, sincronize os arquivos:
-
-```bash
-npm run cap:sync
-```
-
-Para abrir o projeto no Android Studio:
-
-```bash
-npm run android:open
-```
-
 ### Gerar um APK de teste
 
 Com o Android Studio e o SDK configurados, execute:
 
 ```bash
-npm run android:build
+npm run cap:sync                                           
+npm run android:build                      
 ```
 
 O APK será criado em:

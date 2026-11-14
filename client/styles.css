@@ -103,7 +103,7 @@ textarea:focus {
   display: block
 }
 
-#tHari.on {
+#tGaia.on {
   display: flex;
   flex-direction: column;
   padding-bottom: 0;
@@ -963,7 +963,7 @@ nav button.on svg {
 }
 
 /* Tela inicial conversacional */
-#tHari.chat-home.on {
+#tGaia.chat-home.on {
   --chat-red: #d71920;
   --chat-red-dark: #b51218;
   --chat-ink: #242424;
@@ -1204,6 +1204,12 @@ nav button.on svg {
 .send-button {
   background: var(--chat-red);
   color: #fff;
+}
+
+.chat-input input:disabled,
+.send-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .voice-button.gravando {
@@ -2497,7 +2503,7 @@ nav button {
 }
 
 
-/* H.A.R.I PC: em janela larga o app vira uma coluna central, com o fundo futurista nas laterais */
+/* G.A.I.A PC: em janela larga o app vira uma coluna central, com o fundo futurista nas laterais */
 @media (min-width:760px) {
 
   html,
@@ -3036,7 +3042,7 @@ textarea:focus-visible {
   background: rgba(227, 6, 19, .16);
 }
 
-:root:not([data-tema="claro"]) #tHari.chat-home.on {
+:root:not([data-tema="claro"]) #tGaia.chat-home.on {
   --chat-ink: #f4f4f5;
   --chat-muted: #a1a1aa;
   background: var(--bg);

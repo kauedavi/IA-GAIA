@@ -102,7 +102,7 @@ aplicarTema();
 setTimeout(ajustarVB, 50);
 iniciarSessao();
 setInterval(function () {
-  if (telaAtual === "tHari") renderAgora();
+  if (telaAtual === "tGaia") renderAgora();
   if (telaAtual === "tHorarios") renderHorarios();
 }, 30000);
 (function () {
@@ -120,5 +120,5 @@ setInterval(function () {
   window.__saudacao =
     sd +
     n +
-    "! Eu sou o H.A.R.I. Pergunte onde fica uma sala ou quais são suas aulas.";
+    "! Eu sou o G.A.I.A. Pergunte onde fica uma sala ou quais são suas aulas.";
 })();

@@ -1,4 +1,4 @@
-# IA-HARI
+# IA-GAIA
 
 Assistente para consulta de horários e orientação de salas da Escola SENAI
 Anchieta.
@@ -54,7 +54,7 @@ módulos do client em `client/index.html`:
 
 ```html
 <script>
-  window.HARI_API_URL = "https://sua-api.up.railway.app/api/chat";
+  window.GAIA_API_URL = "https://sua-api.up.railway.app/api/chat";
 </script>
 ```
 
@@ -139,9 +139,11 @@ Antes de gerar a versão final:
 
 1. Publique a API e configure o frontend para usar sua URL pública, não
    `http://localhost:3000`;
-2. execute `npm run cap:sync`;
-3. teste login, chat, mapa, voz, localização e funcionamento offline;
-4. gere uma versão assinada e instale-a em um celular real.
+2. configure `GEMINI_API_KEY` no ambiente da API e permita a origem
+   `http://localhost` usada pelo Capacitor;
+3. execute `npm run cap:sync`;
+4. teste login, chat, mapa, voz, localização e funcionamento offline;
+5. gere uma versão assinada e instale-a em um celular real.
 
 Alterações apenas no `server/` não exigem um novo APK, desde que a URL da API
 permaneça a mesma. Alterações no `client/` exigem nova sincronização e uma nova
@@ -149,7 +151,7 @@ build do aplicativo.
 
 ## Sobre o projeto
 
-O IA-HARI combina um frontend web/Android com uma API Express integrada ao
+O IA-GAIA combina um frontend web/Android com uma API Express integrada ao
 Gemini. O frontend usa um ponto de entrada ES Module e módulos de domínio
 carregados sequencialmente, sem bundler. Os módulos de domínio são scripts
 clássicos intencionais para preservar os contratos globais usados pelos
@@ -217,8 +219,8 @@ O diretório web usado no APK é definido em `capacitor.config.json`:
 
 ```json
 {
-  "appId": "br.com.senai.hari",
-  "appName": "HARI",
+  "appId": "br.com.senai.gaia",
+  "appName": "GAIA",
   "webDir": "client"
 }
 ```

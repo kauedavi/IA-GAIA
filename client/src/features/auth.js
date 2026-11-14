@@ -2,17 +2,17 @@
 // As contas ficam neste computador (localStorage). A senha é guardada como SHA-256 com sal; não há servidor.
 function lerContas() {
   try {
-    return JSON.parse(lerLS("hari_contas", "[]")) || [];
+    return JSON.parse(lerLS("gaia_contas", "[]")) || [];
   } catch (e) {
     return [];
   }
 }
 function gravarContas(l) {
-  gravarLS("hari_contas", JSON.stringify(l));
+  gravarLS("gaia_contas", JSON.stringify(l));
 }
 var SESSAO = null;
 try {
-  SESSAO = JSON.parse(lerLS("hari_sessao", "null"));
+  SESSAO = JSON.parse(lerLS("gaia_sessao", "null"));
 } catch (e) {
   SESSAO = null;
 }
@@ -273,12 +273,12 @@ $("btLogin").onclick = function () {
 };
 $("btVisitante").onclick = function () {
   SESSAO = { perfil: "visitante" };
-  gravarLS("hari_sessao", JSON.stringify(SESSAO));
+  gravarLS("gaia_sessao", JSON.stringify(SESSAO));
   iniciarSessao();
 };
 function entrar(c) {
   SESSAO = { id: c.id, perfil: c.perfil };
-  gravarLS("hari_sessao", JSON.stringify(SESSAO));
+  gravarLS("gaia_sessao", JSON.stringify(SESSAO));
   D.nome = c.nome;
   if (c.perfil === "aluno" && c.turma) D.turma = c.turma;
   salvar();
@@ -293,7 +293,7 @@ $("btSair").onclick = function () {
   this.dataset.ok = "";
   SESSAO = null;
   try {
-    localStorage.removeItem("hari_sessao");
+    localStorage.removeItem("gaia_sessao");
   } catch (e) {}
   if (N && N.pararFala) N.pararFala();
   $("conversa").innerHTML = "";
@@ -313,6 +313,6 @@ function iniciarSessao() {
     return;
   }
   montarNav();
-  irPara("tHari");
+  irPara("tGaia");
   agendarLembretes();
 }

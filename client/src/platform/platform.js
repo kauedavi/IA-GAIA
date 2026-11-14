@@ -1,4 +1,4 @@
-/* H.A.R.I para PC: faz no navegador (Edge/Chrome) o papel que o Java faz no APK (window.Nativo).
+/* G.A.I.A para PC: faz no navegador (Edge/Chrome) o papel que o Java faz no APK (window.Nativo).
    voz do dispositivo, microfone pelo reconhecimento de voz do navegador, lembretes por notificação. */
 (function () {
   "use strict";
@@ -87,7 +87,7 @@
   }
   function falarWindows(t, nome) {
     if (!window.speechSynthesis) {
-      cb("hariFalaFim");
+      cb("gaiaFalaFim");
       return;
     }
     speechSynthesis.cancel();
@@ -102,16 +102,16 @@
       u.rate = 1.02;
       if (i === 0)
         u.onstart = function () {
-          if (minha === geracao) cb("hariFalaInicio");
+          if (minha === geracao) cb("gaiaFalaInicio");
         };
       if (i === ps.length - 1) {
         u.onend = u.onerror = function () {
-          if (minha === geracao) cb("hariFalaFim");
+          if (minha === geracao) cb("gaiaFalaFim");
         };
       }
       speechSynthesis.speak(u);
     });
-    if (!ps.length) cb("hariFalaFim");
+    if (!ps.length) cb("gaiaFalaFim");
   }
   if (window.speechSynthesis)
     speechSynthesis.onvoiceschanged = function () {
@@ -135,7 +135,7 @@
     },
     falar: function (t, modo, voz) {
       if (!t || !String(t).trim()) {
-        cb("hariFalaFim");
+        cb("gaiaFalaFim");
         return;
       }
       this.pararFala();
@@ -162,7 +162,7 @@
       var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) {
         cb(
-          "hariVozErro",
+          "gaiaVozErro",
           "Este navegador não reconhece voz: use o Microsoft Edge ou o Google Chrome",
         );
         return;
@@ -178,28 +178,28 @@
       rec.onresult = function (ev) {
         if (deu) return;
         deu = true;
-        cb("hariVoz", ev.results[0][0].transcript);
+        cb("gaiaVoz", ev.results[0][0].transcript);
       };
       rec.onerror = function (ev) {
         if (deu) return;
         deu = true;
         var m = {
-          "not-allowed": "Permita o uso do microfone para o H.A.R.I",
-          "service-not-allowed": "Permita o uso do microfone para o H.A.R.I",
+          "not-allowed": "Permita o uso do microfone para o G.A.I.A",
+          "service-not-allowed": "Permita o uso do microfone para o G.A.I.A",
           "no-speech": "Não ouvi nada, tente de novo",
           network: "O reconhecimento de voz precisa de internet",
           "audio-capture": "Nenhum microfone encontrado",
         }[ev.error];
-        cb("hariVozErro", m || "");
+        cb("gaiaVozErro", m || "");
       };
       rec.onend = function () {
         clearTimeout(limite);
         if (!deu) {
           deu = true;
-          cb("hariVoz", "");
+          cb("gaiaVoz", "");
         }
       };
-      // se o navegador não responder (sem microfone ou sem serviço de voz), não deixa o H.A.R.I preso em "Ouvindo…"
+      // se o navegador não responder (sem microfone ou sem serviço de voz), não deixa o G.A.I.A preso em "Ouvindo…"
       var esse = rec,
         limite = setTimeout(function () {
           if (deu) return;
@@ -208,7 +208,7 @@
             esse.abort();
           } catch (e) {}
           cb(
-            "hariVozErro",
+            "gaiaVozErro",
             "Não consegui ouvir: confira o microfone e a internet",
           );
         }, window.__tempoMic || 15000);
@@ -217,7 +217,7 @@
       } catch (e) {
         deu = true;
         clearTimeout(limite);
-        cb("hariVozErro", "Não consegui abrir o microfone");
+        cb("gaiaVozErro", "Não consegui abrir o microfone");
       }
     },
     agendarLembretes: function (json) {
@@ -240,7 +240,7 @@
                   icon: document.querySelector("link[rel=icon]")
                     ? document.querySelector("link[rel=icon]").href
                     : undefined,
-                  tag: "hari" + x.t,
+                  tag: "gaia" + x.t,
                 });
             } catch (e) {}
             if (typeof toast === "function") toast(x.titulo);
@@ -262,7 +262,7 @@
     compartilhar: function (t, nome) {
       var a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([t], { type: "application/json" }));
-      a.download = nome || "hari.json";
+      a.download = nome || "gaia.json";
       document.body.appendChild(a);
       a.click();
       setTimeout(function () {
@@ -279,10 +279,10 @@
       return "";
     }, // usa o SHA-256 em JavaScript do app (mesmo resultado do celular)
   };
-  window.HARI_PC = true;
+  window.GAIA_PC = true;
   // Esc faz o papel do botão Voltar do celular
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && typeof window.hariVoltar === "function")
-      window.hariVoltar();
+    if (e.key === "Escape" && typeof window.gaiaVoltar === "function")
+      window.gaiaVoltar();
   });
 })();

@@ -32,7 +32,7 @@ function formContato(tipo) {
   var c = conta() || {};
   abrirFolha(
     tipo === "visita" ? "Agendar uma visita" : "Tenho interesse",
-    '<div class="nota">O H.A.R.I monta a mensagem e abre o WhatsApp da Central de Relacionamento do SENAI-SP para você enviar.</div>' +
+    '<div class="nota">O G.A.I.A monta a mensagem e abre o WhatsApp da Central de Relacionamento do SENAI-SP para você enviar.</div>' +
       '<div class="campo"><label>Seu nome</label><input id="cNome" value="' +
       esc(c.nome || "") +
       '"></div>' +
@@ -86,7 +86,7 @@ function formContato(tipo) {
           : "mailto:" +
               D.info.email +
               "?subject=" +
-              encodeURIComponent("Contato pelo H.A.R.I") +
+              encodeURIComponent("Contato pelo G.A.I.A") +
               "&body=" +
               encodeURIComponent(t),
       );
@@ -232,13 +232,13 @@ $("btTestarVoz").onclick = function () {
   falarTexto(
     "Olá" +
       (D.nome ? ", " + D.nome.split(" ")[0] : "") +
-      "! Eu sou o H.A.R.I, seu guia no SENAI.",
+      "! Eu sou o G.A.I.A, seu guia no SENAI.",
   );
 };
-window.hariFalaInicio = function () {
+window.gaiaFalaInicio = function () {
   estado("falando");
 };
-window.hariVozAviso = function (m) {
+window.gaiaVozAviso = function (m) {
   toast("Voz do Gemini indisponível (" + m + "): usando a voz do Windows");
 };
 

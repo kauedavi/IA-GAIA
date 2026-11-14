@@ -1,10 +1,10 @@
-🤖 AGENT.md - Diretrizes de Desenvolvimento do Projeto H.A.R.I
+🤖 AGENT.md - Diretrizes de Desenvolvimento do Projeto G.A.I.A
 
-Este documento define os padrões obrigatórios de arquitetura, qualidade de código, nomenclatura e design de interface (UX/UI) para qualquer Agente de Inteligência Artificial ou desenvolvedor atuando no repositório H.A.R.I.
+Este documento define os padrões obrigatórios de arquitetura, qualidade de código, nomenclatura e design de interface (UX/UI) para qualquer Agente de Inteligência Artificial ou desenvolvedor atuando no repositório G.A.I.A.
 
 📌 1. Visão Geral do Projeto
 
-O H.A.R.I (Assistente de Acessibilidade e Rotas Inteligentes) é uma plataforma de suporte e orientação aos alunos.
+O G.A.I.A (Assistente de Acessibilidade e Rotas Inteligentes) é uma plataforma de suporte e orientação aos alunos.
 
 Backend: Node.js (Express) em arquitetura monolítica modularizada por camadas (/server), integrado à API do Google Gemini via Function Calling.
 
@@ -110,7 +110,7 @@ Ao criar elementos dinâmicos, prefira a criação explícita ou template litera
 
 🎨 5. Padrões de UX/UI Moderno
 
-O visual do H.A.R.I deve seguir uma estética moderna, profissional, acessível e limpa.
+O visual do G.A.I.A deve seguir uma estética moderna, profissional, acessível e limpa.
 
 5.1 Sistema de Cores e Variáveis CSS (styles/main.css)
 
@@ -159,7 +159,7 @@ Micro-interações: Todos os botões e elementos interativos devem possuir trans
 }
 
 
-Feedback Visual de Ação: O indicador de digitação da IA ("H.A.R.I está a pensar...") deve conter animação sutil de pulso ou pontos em carregamento.
+Feedback Visual de Ação: O indicador de digitação da IA ("G.A.I.A está a pensar...") deve conter animação sutil de pulso ou pontos em carregamento.
 
 Scroll Automático: A janela do chat deve sempre rolar automaticamente para a última mensagem com comportamento suave (behavior: 'smooth').
 

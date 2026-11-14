@@ -97,7 +97,7 @@ function renderAjustes() {
       };
     });
   $("versao").textContent =
-    "H.A.R.I — Hub de Apoio a Rotas e Informações" +
+    "G.A.I.A — Hub de Apoio a Rotas e Informações" +
     (N && N.versao ? " · v" + N.versao() : "");
   var c = conta(),
     pf = perfil();
@@ -423,7 +423,7 @@ $("arqPlanta").onchange = function () {
       c.height = Math.round(img.height * k);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
       var u = c.toDataURL("image/jpeg", 0.82);
-      if (!gravarLS("hari_planta", u)) {
+      if (!gravarLS("gaia_planta", u)) {
         toast("Imagem grande demais para guardar");
         return;
       }
@@ -442,7 +442,7 @@ $("arqPlanta").onchange = function () {
 $("btSemPlanta").onclick = function () {
   PLANTA = "";
   try {
-    localStorage.removeItem("hari_planta");
+    localStorage.removeItem("gaia_planta");
   } catch (e) {}
   toast("Planta removida: voltou o mapa desenhado");
 };
@@ -451,7 +451,7 @@ $("btExportar").onclick = function () {
   if (N && N.compartilhar)
     N.compartilhar(
       t,
-      "hari_" +
+      "gaia_" +
         norm(D.turma || "turma")
           .replace(/ /g, "_")
           .slice(0, 30) +
@@ -460,7 +460,7 @@ $("btExportar").onclick = function () {
   else {
     var a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([t], { type: "application/json" }));
-    a.download = "hari.json";
+    a.download = "gaia.json";
     a.click();
   }
 };

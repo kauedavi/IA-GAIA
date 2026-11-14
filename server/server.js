@@ -11,6 +11,7 @@ const configuredOrigins = (process.env.CLIENT_ORIGIN || "")
   .map((origin) => origin.trim())
   .filter(Boolean);
 const allowedOrigins = [
+  "http://localhost",
   "http://localhost:5500",
   "http://127.0.0.1:5500",
   ...configuredOrigins,
@@ -39,4 +40,4 @@ app.use((error, _req, res, _next) => {
   res.status(status).json({ success: false, error: message });
 });
 
-app.listen(port, () => console.log(`H.A.R.I API ouvindo na porta http://localhost:${port}`));
+app.listen(port, () => console.log(`G.A.I.A API ouvindo na porta http://localhost:${port}`));

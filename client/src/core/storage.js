@@ -17,7 +17,7 @@ function gravarLS(k, v) {
 }
 var D;
 try {
-  D = JSON.parse(lerLS("hari_dados", "null"));
+  D = JSON.parse(lerLS("gaia_dados", "null"));
 } catch (e) {
   D = null;
 }
@@ -78,7 +78,7 @@ if (D.versao < 4) {
   }
   D.versao = 4;
   try {
-    localStorage.setItem("hari_dados", JSON.stringify(D));
+    localStorage.setItem("gaia_dados", JSON.stringify(D));
   } catch (e) {}
 }
 // 1.4: laboratórios com o número oficial (programa de necessidades da planta). Só troca se o nome ainda for o antigo.
@@ -125,7 +125,7 @@ if (D.versao < 5) {
   });
   D.versao = 5;
   try {
-    localStorage.setItem("hari_dados", JSON.stringify(D));
+    localStorage.setItem("gaia_dados", JSON.stringify(D));
   } catch (e) {}
 }
 // 1.6: mapa 3D refeito (pavimento superior no lugar certo, corredores por andar, elevador, terreno). Mantém nomes editados e salas criadas.
@@ -170,12 +170,12 @@ if (D.versao < 6) {
   }
   D.versao = 6;
   try {
-    localStorage.setItem("hari_dados", JSON.stringify(D));
+    localStorage.setItem("gaia_dados", JSON.stringify(D));
   } catch (e) {}
 }
 var CFG;
 try {
-  CFG = JSON.parse(lerLS("hari_cfg", "{}")) || {};
+  CFG = JSON.parse(lerLS("gaia_cfg", "{}")) || {};
 } catch (e) {
   CFG = {};
 }
@@ -184,10 +184,10 @@ if (!CFG.de || !sala(CFG.de))
   CFG.de = sala("entrada") ? "entrada" : (D.salas[0] || {}).id;
 if (CFG.lembrete === undefined) CFG.lembrete = 10;
 function salvar() {
-  if (!gravarLS("hari_dados", JSON.stringify(D)))
+  if (!gravarLS("gaia_dados", JSON.stringify(D)))
     toast("Não consegui salvar neste aparelho");
 }
 function salvarCfg() {
-  gravarLS("hari_cfg", JSON.stringify(CFG));
+  gravarLS("gaia_cfg", JSON.stringify(CFG));
 }
-var PLANTA = lerLS("hari_planta", "");
+var PLANTA = lerLS("gaia_planta", "");

@@ -1,4 +1,4 @@
-package br.com.senai.hari;
+package br.com.senai.gaia;
 
 import com.getcapacitor.BridgeActivity;
 

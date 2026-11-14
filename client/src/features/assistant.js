@@ -1,4 +1,4 @@
-// ═════ ESFERA (núcleo do H.A.R.I) ═════
+// ═════ ESFERA (núcleo do G.A.I.A) ═════
 var ESTADO = "pronto",
   nivel = 0;
 var COR_EST = {
@@ -104,7 +104,7 @@ function desenharOrbe(cv, t) {
   gl.addColorStop(1, rgba(0));
   g.fillStyle = gl;
   g.fillRect(0, 0, w, h);
-  // anéis orbitais (assinatura do H.A.R.I: um radar/bússola em volta do núcleo)
+  // anéis orbitais (assinatura do G.A.I.A: um radar/bússola em volta do núcleo)
   g.lineWidth = 1;
   for (var r = 0; r < 3; r++) {
     var rr = R * (1.28 + r * 0.17),
@@ -215,7 +215,7 @@ var ultQuadro = 0;
 function quadro(t) {
   requestAnimationFrame(quadro);
   var login = $("tLogin").classList.contains("on");
-  if (document.hidden || (!login && !$("tHari").classList.contains("on")))
+  if (document.hidden || (!login && !$("tGaia").classList.contains("on")))
     return;
   if (t - ultQuadro < 28) return;
   ultQuadro = t;
@@ -247,9 +247,9 @@ function estado(s) {
 }
 
 // ═════ NAVEGAÇÃO (as abas mudam com o perfil) ═════
-var telaAtual = "tHari";
+var telaAtual = "tGaia";
 var ICN = {
-  hari: '<circle cx="12" cy="12" r="4"/><ellipse cx="12" cy="12" rx="10" ry="4.5"/>',
+  gaia: '<circle cx="12" cy="12" r="4"/><ellipse cx="12" cy="12" rx="10" ry="4.5"/>',
   mapa: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/>',
   hor: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   agenda:
@@ -263,7 +263,7 @@ function abasDoPerfil() {
   var p = perfil();
   if (p === "professor")
     return [
-      ["tHari", "H.A.R.I", "hari"],
+      ["tGaia", "G.A.I.A", "gaia"],
       ["tMapa", "Mapa", "mapa"],
       ["tHorarios", "Aulas", "hor"],
       ["tAgenda", "Agenda", "agenda"],
@@ -271,14 +271,14 @@ function abasDoPerfil() {
     ];
   if (p === "empresa" || p === "visitante")
     return [
-      ["tHari", "H.A.R.I", "hari"],
+      ["tGaia", "G.A.I.A", "gaia"],
       ["tMapa", "Mapa", "mapa"],
       ["tCursos", "Cursos", "cursos"],
       ["tUnidade", "Unidade", "unid"],
       ["tAjustes", "Configurações", "aj"],
     ];
   return [
-    ["tHari", "H.A.R.I", "hari"],
+    ["tGaia", "G.A.I.A", "gaia"],
     ["tMapa", "Mapa", "mapa"],
     ["tHorarios", "Horários", "hor"],
     ["tAgenda", "Agenda", "agenda"],
@@ -326,13 +326,13 @@ function irPara(t) {
   if (t === "tMapa") desenharMapa();
   if (t === "tHorarios") renderHorarios();
   if (t === "tAjustes") renderAjustes();
-  if (t === "tHari") renderAgora();
+  if (t === "tGaia") renderAgora();
   if (t === "tAgenda") renderAgenda();
   if (t === "tCursos") renderCursos();
   if (t === "tUnidade") renderUnidade();
 }
 // botão voltar do Android: fecha a folha, sai do modo marcar, volta para o início; senão, deixa o app fechar
-window.hariVoltar = function () {
+window.gaiaVoltar = function () {
   if ($("folha").classList.contains("on")) {
     fecharFolha();
     return true;
@@ -342,8 +342,8 @@ window.hariVoltar = function () {
     return true;
   }
   if ($("tLogin").classList.contains("on")) return false;
-  if (telaAtual !== "tHari") {
-    irPara("tHari");
+  if (telaAtual !== "tGaia") {
+    irPara("tGaia");
     return true;
   }
   return false;
@@ -519,7 +519,9 @@ function digitando() {
 }
 function enviar(txt) {
   txt = String(txt || "").trim();
-  if (!txt) return;
+  if (!txt || $("entrada").disabled) return;
+  $("entrada").disabled = true;
+  $("btEnviar").disabled = true;
   $("entrada").value = "";
   addMsg("eu", txt);
   if (N && N.pararFala) N.pararFala();
@@ -553,7 +555,7 @@ function responder(r, fonte) {
     falarTexto(r.texto.replace(/[•*#_]/g, ""));
   } else estado("pronto");
 }
-window.hariFalaFim = function () {
+window.gaiaFalaFim = function () {
   if (ESTADO === "falando") estado("pronto");
 };
 
@@ -623,7 +625,7 @@ function contexto() {
       );
     });
   return (
-    "Você é o H.A.R.I (Hub de Apoio a Rotas e Informações), assistente do SENAI falando com " +
+    "Você é o G.A.I.A (Hub de Apoio a Rotas e Informações), assistente do SENAI falando com " +
     quem +
     ". " +
     "Seu foco: ajudar a se localizar na unidade (salas, blocos, laboratórios, banheiros, secretaria…) e informar horários. " +
@@ -702,7 +704,7 @@ function perguntarIA(txt) {
   var dg = digitando(),
     id = "p" + ++pedidoN;
   pendentes[id] = { dg: dg, txt: txt };
-  fetch(window.HARI_API_URL || "http://localhost:3000/api/chat", {
+  fetch(window.GAIA_API_URL || "http://localhost:3000/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message: txt }),
@@ -717,21 +719,23 @@ function perguntarIA(txt) {
   })
     .then(function (payload) {
       if (!payload.success) throw new Error(payload.error || "Resposta inválida");
-      window.hariResposta(id, JSON.stringify({
+      window.gaiaResposta(id, JSON.stringify({
         ok: true,
         texto: payload.data.message,
         action: payload.data.action,
       }));
     })
     .catch(function (error) {
-      window.hariResposta(id, JSON.stringify({ ok: false, erro: error.message }));
+      window.gaiaResposta(id, JSON.stringify({ ok: false, erro: error.message }));
     });
 }
-window.hariResposta = function (id, js) {
+window.gaiaResposta = function (id, js) {
   var p = pendentes[id];
   if (!p) return;
   delete pendentes[id];
   p.dg.remove();
+  $("entrada").disabled = false;
+  $("btEnviar").disabled = false;
   var r;
   try {
     r = JSON.parse(js);
@@ -762,7 +766,7 @@ window.hariResposta = function (id, js) {
       .replace(/\*\*/g, "")
       .trim() || "Pronto.";
   HIST.push({ role: "model", parts: [{ text: out.texto }] });
-  responder(out, "H.A.R.I API");
+  responder(out, "G.A.I.A API");
 };
 
 // ── modo offline: entende as perguntas mais comuns sobre salas e horários ──
@@ -893,12 +897,12 @@ function local(q) {
       texto:
         "Olá" +
         oi +
-        "! Sou o H.A.R.I. Posso te dizer onde fica qualquer sala da unidade e quais são suas aulas. É só perguntar.",
+        "! Sou o G.A.I.A. Posso te dizer onde fica qualquer sala da unidade e quais são suas aulas. É só perguntar.",
     };
   if (/\b(ajuda|o que voce faz|quem e voce|quem voce e)\b/.test(nq))
     return {
       texto:
-        "Eu sou o H.A.R.I, Hub de Apoio a Rotas e Informações. Pergunte coisas como: onde fica a secretaria, como chego no laboratório, qual minha próxima aula ou quais as aulas de quinta.",
+        "Eu sou o G.A.I.A, Hub de Apoio a Rotas e Informações. Pergunte coisas como: onde fica a secretaria, como chego no laboratório, qual minha próxima aula ou quais as aulas de quinta.",
     };
   if (
     /\b(intervalo|recreio|lanche)\b/.test(nq) &&
@@ -1198,12 +1202,12 @@ $("btMic").onclick = $("orbe").onclick = function () {
   $("btMic").classList.add("gravando");
   N.ouvir();
 };
-window.hariVoz = function (t) {
+window.gaiaVoz = function (t) {
   $("btMic").classList.remove("gravando");
   estado("pronto");
   if (t) enviar(t);
 };
-window.hariVozErro = function (m) {
+window.gaiaVozErro = function (m) {
   $("btMic").classList.remove("gravando");
   estado("pronto");
   if (m) toast(m);

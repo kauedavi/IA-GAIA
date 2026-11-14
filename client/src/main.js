@@ -15,10 +15,10 @@ const modules = [
 ];
 
 loadModules(modules).catch((error) => {
-  console.error("Falha ao carregar os módulos do H.A.R.I.", error);
+  console.error("Falha ao carregar os módulos do G.A.I.A.", error);
   document.body.innerHTML = `
     <main style="padding:2rem;font-family:system-ui">
-      <h1>Não foi possível iniciar o H.A.R.I.</h1>
+      <h1>Não foi possível iniciar o G.A.I.A.</h1>
       <p>Recarregue a página. Se o problema continuar, consulte o console do navegador.</p>
     </main>
   `;

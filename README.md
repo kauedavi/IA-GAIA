@@ -85,6 +85,9 @@ O projeto usa o [Capacitor](https://capacitorjs.com/) para empacotar o
 frontend de `client/` em um aplicativo Android. A API continua separada em
 `server/` e não é incluída no APK.
 
+No Android, o WebView do Capacitor usa `https://localhost` como origem. Essa
+origem já está liberada no CORS do backend para permitir as chamadas do APK.
+
 ### Pré-requisitos
 
 - Android Studio instalado;

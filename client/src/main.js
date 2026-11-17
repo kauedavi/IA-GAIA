@@ -12,6 +12,7 @@ const modules = [
   "./features/unit.js",
   "./map/map3d.js",
   "./bootstrap.js"
+
 ];
 
 loadModules(modules).catch((error) => {

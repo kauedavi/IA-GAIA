@@ -1,8 +1,8 @@
-import { salas } from "../../data/salas.mock.js";
+import { findSala } from "../../services/spreadsheetService.js";
 
 export const gpsDeclaration = {
   name: "consultar_rota",
-  description: "Consulta a sala de destino e retorna dados estruturados para navegação.",
+  description: "Consulta uma sala da unidade na planilha atualizada e retorna dados estruturados para navegação.",
   parametersJsonSchema: {
     type: "object",
     properties: {
@@ -13,12 +13,8 @@ export const gpsDeclaration = {
 };
 
 export function consultarRota({ destino }) {
-  const query = String(destino || "").trim().toLowerCase();
-  const sala = salas.find((item) =>
-    item.id.toLowerCase() === query ||
-    item.nome.toLowerCase().includes(query)
-  );
+  const sala = findSala(destino);
   return sala
-    ? { encontrado: true, sala, action: { type: "NAVIGATE_TO_ROOM", roomId: sala.id } }
-    : { encontrado: false, mensagem: "Sala não encontrada no cadastro." };
+    ? { encontrado: true, sala, fonte: "planilha_excel", action: { type: "NAVIGATE_TO_ROOM", roomId: sala.id } }
+    : { encontrado: false, mensagem: "Sala não encontrada na planilha atual." };
 }

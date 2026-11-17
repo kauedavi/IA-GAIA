@@ -2,6 +2,8 @@ import "./src/config/env.js";
 import express from "express";
 import cors from "cors";
 import { chatRoutes } from "./src/routes/chatRoutes.js";
+import { spreadsheetRoutes } from "./src/routes/spreadsheetRoutes.js";
+import { startSpreadsheetWatcher } from "./src/services/spreadsheetService.js";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -29,16 +31,21 @@ app.use(
 app.use(express.json({ limit: "32kb" }));
 app.get("/health", (_req, res) => res.json({ success: true, data: { status: "ok" } }));
 app.use("/api", chatRoutes);
+app.use("/api", spreadsheetRoutes);
 app.use((error, _req, res, _next) => {
   console.error(error);
-  const status = [429, 500, 503].includes(error.status) ? error.status : 500;
+  const status = [400, 404, 429, 500, 503].includes(error.status) ? error.status : 500;
   const message =
-    status === 503
-      ? "O serviço Gemini está temporariamente indisponível. Tente novamente em instantes."
-      : status === 429
-        ? "O limite de solicitações do Gemini foi atingido. Tente novamente em instantes."
-        : "Erro interno ao processar a solicitação.";
+    status === 400
+      ? error.message
+      : status === 503
+        ? "O serviço Gemini está temporariamente indisponível. Tente novamente em instantes."
+        : status === 429
+          ? "O limite de solicitações do Gemini foi atingido. Tente novamente em instantes."
+          : "Erro interno ao processar a solicitação.";
   res.status(status).json({ success: false, error: message });
 });
 
 app.listen(port, () => console.log(`G.A.I.A API ouvindo na porta http://localhost:${port}`));
+
+startSpreadsheetWatcher();

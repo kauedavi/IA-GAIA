@@ -237,6 +237,16 @@
           type="button">Voltar ao exemplo</button><input id="arqImport" type="file"
           accept=".json,application/json,text/plain" hidden />
       </div>
+      <div class="card configuracao-secao">
+        <h3>Planilha de horários e salas</h3>
+        <p class="nota">Envie um arquivo Excel (.xlsx/.xls) ou CSV. Use abas chamadas Horários, Salas e Cursos.</p>
+        <input id="arqPlanilha" type="file" accept=".xlsx,.xls,.csv" />
+        <div class="acoes configuracao-acoes">
+          <button id="btEnviarPlanilha" class="botao sec" type="button">Atualizar planilha</button>
+          <button id="btStatusPlanilha" class="botao sec" type="button">Ver status</button>
+        </div>
+        <div id="statusPlanilha" class="nota" role="status" aria-live="polite"></div>
+      </div>
       <button id="btSair" class="botao perigo" type="button">Sair da conta</button>
       <div id="versao" class="nota"></div>
     </section>

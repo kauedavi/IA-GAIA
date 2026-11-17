@@ -1,8 +1,8 @@
-import { horarios } from "../../data/horarios.mock.js";
+import { getHorarios } from "../../services/spreadsheetService.js";
 
 export const horariosDeclaration = {
   name: "consultar_horarios",
-  description: "Consulta aulas cadastradas por turma, dia ou sala.",
+  description: "Consulta aulas cadastradas por turma, dia ou sala na planilha atualizada.",
   parametersJsonSchema: {
     type: "object",
     properties: {
@@ -14,11 +14,6 @@ export const horariosDeclaration = {
 };
 
 export function consultarHorarios({ turma, dia, sala } = {}) {
-  const normalize = (value) => String(value || "").trim().toLowerCase();
-  const result = horarios.filter((item) =>
-    (!turma || normalize(item.turma) === normalize(turma)) &&
-    (!dia || normalize(item.dia) === normalize(dia)) &&
-    (!sala || normalize(item.sala).includes(normalize(sala)))
-  );
-  return { encontrados: result.length, horarios: result };
+  const result = getHorarios({ turma, dia, sala });
+  return { encontrados: result.length, horarios: result, fonte: "planilha_excel" };
 }

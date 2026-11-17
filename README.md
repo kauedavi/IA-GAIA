@@ -216,3 +216,18 @@ O diretório web usado no APK é definido em `capacitor.config.json`:
   "webDir": "client"
 }
 ```
+
+<!-- GAIA_SPREADSHEET_DOC -->
+## Planilha dinâmica de horários, cursos e salas
+
+A fonte oficial passou a ser uma planilha `.xlsx`, `.xls` ou `.csv`, analisada no backend pela biblioteca SheetJS. Os mocks `horarios.mock.js` e `salas.mock.js` não são mais utilizados.
+
+Coloque o arquivo em `server/src/data/gaia.xlsx` ou defina `GAIA_SPREADSHEET_PATH` com o caminho completo. Também é possível enviá-lo por `POST /api/planilha/upload` usando o campo multipart `arquivo`. Alterações no arquivo são monitoradas e recarregadas automaticamente; o endpoint `GET /api/planilha/eventos` informa atualizações por Server-Sent Events.
+
+A planilha pode usar estas abas:
+
+- `Horários`: colunas `Turma`, `Dia`, `Início`, `Fim`, `Disciplina`, `Professor` e `Sala`.
+- `Salas`: colunas `ID`, `Nome`, `Bloco`, `Andar`, `Tipo`, `X` e `Y`.
+- `Cursos`: colunas `Nome`, `Código`, `Nível`, `Turma`, `Turno`, `Modalidade` e `Descrição`.
+
+Os nomes das abas e colunas são normalizados, sem diferenciar maiúsculas, acentos ou caracteres como espaço e `_`. A tela de Configurações permite enviar a planilha e consultar a quantidade de registros carregados.

@@ -510,3 +510,49 @@ $("btExemplo").onclick = function () {
 };
 
 // ═════ CONTAS E PERFIS (login local) ═════
+// ═════ PLANILHA EXCEL/SHEETJS ═════
+(function () {
+  var chatUrl = window.GAIA_API_URL || "http://localhost:3000/api/chat";
+  var apiBase = chatUrl.replace(/\/chat$/, "");
+
+  function atualizarStatusPlanilha() {
+    var caixa = $("statusPlanilha");
+    fetch(apiBase + "/planilha/status")
+      .then(function (response) { return response.json(); })
+      .then(function (result) {
+        var d = result.data || {};
+        var c = d.counts || {};
+        if (caixa) caixa.textContent = d.source
+          ? d.source + " · " + (c.horarios || 0) + " horários · " + (c.salas || 0) + " salas · " + (c.cursos || 0) + " cursos"
+          : "Nenhuma planilha carregada.";
+      })
+      .catch(function () { if (caixa) caixa.textContent = "API de planilhas indisponível."; });
+  }
+
+  var botaoEnviar = $("btEnviarPlanilha");
+  if (botaoEnviar) botaoEnviar.onclick = function () {
+    var arquivo = $("arqPlanilha") && $("arqPlanilha").files[0];
+    if (!arquivo) { toast("Selecione uma planilha"); return; }
+    var form = new FormData();
+    form.append("arquivo", arquivo);
+    botaoEnviar.disabled = true;
+    fetch(apiBase + "/planilha/upload", { method: "POST", body: form })
+      .then(function (response) { return response.json().then(function (body) { if (!response.ok) throw new Error(body.error || "Falha no upload"); return body; }); })
+      .then(function (result) {
+        var c = (result.data && result.data.counts) || {};
+        $("statusPlanilha").textContent = "Atualizado: " + (c.horarios || 0) + " horários, " + (c.salas || 0) + " salas e " + (c.cursos || 0) + " cursos.";
+        toast("Planilha atualizada");
+      })
+      .catch(function (error) { $("statusPlanilha").textContent = error.message; })
+      .finally(function () { botaoEnviar.disabled = false; });
+  };
+
+  var botaoStatus = $("btStatusPlanilha");
+  if (botaoStatus) botaoStatus.onclick = atualizarStatusPlanilha;
+  atualizarStatusPlanilha();
+
+  if (typeof EventSource !== "undefined") {
+    var eventos = new EventSource(apiBase + "/planilha/eventos");
+    eventos.onmessage = atualizarStatusPlanilha;
+  }
+})();

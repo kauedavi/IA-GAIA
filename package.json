@@ -29,7 +29,9 @@
     "@google/genai": "^2.32.0",
     "cors": "^2.8.5",
     "dotenv": "^18.0.9",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "multer": "^2.5.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.6.0"

@@ -3,313 +3,296 @@ import XLSX from "xlsx";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
+const SPREADSHEET_PATH = path.join(currentDirectory, "Horários Tarde.xlsx");
+const SCHEDULE_SHEET_NAME = "HorárioTARDE";
+const LISTS_SHEET_NAME = "Listas";
+const LESSON_LABEL_PATTERN = /^Aula[1-5]$/i;
+const FIRST_LESSON_LABEL_PATTERN = /^Aula1$/i;
+const TIME_RANGE_PATTERN = /^(\d{1,2})h(\d{0,2})\s*[-–]\s*(\d{1,2})h(\d{0,2})$/;
+const CLASS_CODE_PATTERN = /\(([^)]+)\)/;
+const GROUP_NAMES = ["T1", "T2"];
 
-const arquivo = path.join(__dirname, "Horários Tarde.xlsx");
-
-const workbook = XLSX.readFile(arquivo);
-
-console.log("Abas encontradas:");
-console.log(workbook.SheetNames);
-
-const planilha = workbook.Sheets["HorárioTARDE"];
-
-if (!planilha) {
-  throw new Error("A aba HorárioTARDE não foi encontrada.");
-}
-
-const linhas = XLSX.utils.sheet_to_json(planilha, {
-  header: 1,
-  defval: "",
-  blankrows: false
-});
-
-console.log("\nPrimeiras 15 linhas da planilha:");
-
-console.table(
-  linhas.slice(0, 35).map((linha, indice) => ({
-    linha: indice + 1,
-    turma: linha[0],
-    aula: linha[1],
-    horario: linha[2],
-    segunda_T1: linha[4],
-    segunda_T2: linha[5],
-    terca_T1: linha[7],
-    terca_T2: linha[8]
-  }))
-);
-
-console.log("\nTotal de linhas lidas:", linhas.length);
-
-
-const turmas = [];
-
-for (let i = 0; i < linhas.length; i++) {
-  const turma = String(linhas[i][0] ?? "").trim();
-  const aula = String(linhas[i][1] ?? "").trim();
-
-  // Identifica o início do bloco de cada turma
-  if (turma && /^Aula1$/i.test(aula)) {
-    turmas.push({
-      linha: i + 1,
-      turma
-    });
-  }
-}
-
-console.log("\nTurmas identificadas:");
-console.table(turmas);
-
-console.log("\nTotal de turmas:", turmas.length);
-
-
-const aulasExtraidas = [];
-
-const dias = [
-  { nome: "Segunda", numero: 1, colunas: [4, 5] },
-  { nome: "Terça", numero: 2, colunas: [7, 8] },
-  { nome: "Quarta", numero: 3, colunas: [10, 11] },
-  { nome: "Quinta", numero: 4, colunas: [13, 14] },
-  { nome: "Sexta", numero: 5, colunas: [16, 17] }
+// Colunas (base 0) de T1 e T2 de cada dia da semana (1 = segunda ... 5 = sexta)
+const WEEKDAY_COLUMNS = [
+  { weekday: 1, columns: [4, 5] },
+  { weekday: 2, columns: [7, 8] },
+  { weekday: 3, columns: [10, 11] },
+  { weekday: 4, columns: [13, 14] },
+  { weekday: 5, columns: [16, 17] }
 ];
 
-const texto = (valor) => String(valor ?? "").trim();
+// Ordem importa: tabelas "filhas" (horarios) primeiro ao apagar
+const IMPORTED_TABLES = ["horarios", "turmas", "disciplinas", "professores", "ambientes"];
 
-for (let t = 0; t < turmas.length; t++) {
-  const turmaAtual = turmas[t];
-  const inicio = turmaAtual.linha - 1;
-
-  const fim = t + 1 < turmas.length
-    ? turmas[t + 1].linha - 1
-    : linhas.length;
-
-  for (let i = inicio; i < fim; i++) {
-    const numeroAula = texto(linhas[i]?.[1]);
-    const horario = texto(linhas[i]?.[2]);
-
-    if (!/^Aula[1-5]$/i.test(numeroAula)) {
-      continue;
-    }
-
-    for (const dia of dias) {
-      for (let grupoIndex = 0; grupoIndex < 2; grupoIndex++) {
-        const coluna = dia.colunas[grupoIndex];
-
-        const disciplina = texto(linhas[i]?.[coluna]);
-        const professor = texto(linhas[i + 1]?.[coluna]);
-        const ambiente = texto(linhas[i + 2]?.[coluna]);
-
-        if (!disciplina) continue;
-
-        aulasExtraidas.push({
-          turma: turmaAtual.turma,
-          dia: dia.nome,
-          dia_semana: dia.numero,
-          aula: numeroAula,
-          grupo: grupoIndex === 0 ? "T1" : "T2",
-          horario,
-          disciplina,
-          professor,
-          ambiente
-        });
-      }
-    }
-  }
+function readText(value) {
+  return String(value ?? "").trim();
 }
 
-console.log("\nTotal de registros extraídos:", aulasExtraidas.length);
+function readSheetRows({ workbook, sheetName }) {
+  const sheet = workbook.Sheets[sheetName];
 
-console.log("\nPrimeiros 15 registros:");
-console.table(aulasExtraidas.slice(0, 15));
-
-console.log("\nAulas da turma 1DEVM-A:");
-console.table(
-  aulasExtraidas
-    .filter((aula) => aula.turma.includes("(1DEVM-A)"))
-    .slice(0, 15)
-);
-
-
-
-function converterHorario(horario) {
-  const resultado = String(horario).trim().match(
-    /^(\d{1,2})h(\d{0,2})\s*[-–]\s*(\d{1,2})h(\d{0,2})$/
-  );
-
-  if (!resultado) {
-    return null;
+  if (!sheet) {
+    throw new Error(`A aba ${sheetName} não foi encontrada.`);
   }
 
-  const formatar = (hora, minuto) => {
-    const h = Number(hora);
-    const m = minuto === "" ? 0 : Number(minuto);
+  return XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", blankrows: true });
+}
 
-    if (h > 23 || m > 59) {
-      return null;
-    }
+// Lê uma coluna da aba Listas pelo nome do cabeçalho (primeira linha), sem repetições
+function readListColumn({ rows, headerName }) {
+  const columnIndex = (rows[0] ?? []).findIndex((header) => readText(header) === headerName);
 
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  if (columnIndex === -1) {
+    throw new Error(`A coluna ${headerName} não foi encontrada na aba ${LISTS_SHEET_NAME}.`);
+  }
+
+  const values = rows.slice(1).map((row) => readText(row[columnIndex])).filter(Boolean);
+
+  return [...new Set(values)];
+}
+
+function extractCatalog(rows) {
+  return {
+    rooms: readListColumn({ rows, headerName: "Ambientes" }),
+    teachers: readListColumn({ rows, headerName: "Docentes" })
   };
-
-  const inicio = formatar(resultado[1], resultado[2]);
-  const fim = formatar(resultado[3], resultado[4]);
-
-  if (!inicio || !fim || inicio >= fim) {
-    return null;
-  }
-
-  return { inicio, fim };
 }
 
+function findClassBlocks(rows) {
+  const blocks = [];
 
-const registrosValidados = [];
-const registrosInvalidos = [];
+  rows.forEach((row, rowIndex) => {
+    const className = readText(row[0]);
+    const lessonLabel = readText(row[1]);
 
-for (const aula of aulasExtraidas) {
-  const horario = converterHorario(aula.horario);
-
-  if (!horario) {
-    registrosInvalidos.push({
-      turma: aula.turma,
-      dia: aula.dia,
-      aula: aula.aula,
-      horario: aula.horario
-    });
-
-    continue;
-  }
-
-  registrosValidados.push({
-    ...aula,
-    inicio: horario.inicio,
-    fim: horario.fim,
-    numero_aula: Number(aula.aula.replace("Aula", ""))
+    if (className && FIRST_LESSON_LABEL_PATTERN.test(lessonLabel)) {
+      blocks.push({ rowIndex, className });
+    }
   });
+
+  return blocks;
 }
 
-console.log("\nRegistros válidos:", registrosValidados.length);
-console.log("Registros com problemas:", registrosInvalidos.length);
+function formatTime(hourText, minuteText) {
+  const hour = Number(hourText);
+  const minute = minuteText === "" ? 0 : Number(minuteText);
 
-if (registrosInvalidos.length > 0) {
-  console.table(registrosInvalidos);
+  if (hour > 23 || minute > 59) return null;
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
-console.log("\nAmostra dos registros preparados:");
-console.table(registrosValidados.slice(0, 10));
+function parseTimeRange(text) {
+  const match = text.match(TIME_RANGE_PATTERN);
 
+  if (!match) return null;
 
-if (registrosInvalidos.length > 0) {
-  throw new Error("Importação cancelada: existem horários inválidos.");
+  const startTime = formatTime(match[1], match[2]);
+  const endTime = formatTime(match[3], match[4]);
+
+  if (!startTime || !endTime || startTime >= endTime) return null;
+
+  return { startTime, endTime };
 }
 
-const inserirTurma = db.prepare(`
-  INSERT OR IGNORE INTO turmas (codigo, nome)
-  VALUES (?, ?)
-`);
+// Cada aula ocupa 3 linhas: disciplina, professor e ambiente
+function extractLessonsFromRow({ rows, rowIndex, className }) {
+  const lessonLabel = readText(rows[rowIndex]?.[1]);
 
-const inserirDisciplina = db.prepare(`
-  INSERT OR IGNORE INTO disciplinas (codigo, nome)
-  VALUES (?, ?)
-`);
+  if (!LESSON_LABEL_PATTERN.test(lessonLabel)) return [];
 
-const inserirProfessor = db.prepare(`
-  INSERT OR IGNORE INTO professores (nome)
-  VALUES (?)
-`);
+  const rawTime = readText(rows[rowIndex][2]);
+  const timeRange = parseTimeRange(rawTime);
 
-const inserirAmbiente = db.prepare(`
-  INSERT OR IGNORE INTO ambientes (nome)
-  VALUES (?)
-`);
+  if (!timeRange) {
+    throw new Error(`Horário inválido (${rawTime}) na turma ${className}, linha ${rowIndex + 1}.`);
+  }
 
-const buscarTurma = db.prepare(
-  "SELECT id FROM turmas WHERE codigo = ?"
-);
+  const lessons = [];
 
-const buscarDisciplina = db.prepare(
-  "SELECT id FROM disciplinas WHERE codigo = ?"
-);
+  for (const { weekday, columns } of WEEKDAY_COLUMNS) {
+    columns.forEach((column, groupIndex) => {
+      const subject = readText(rows[rowIndex][column]);
 
-const buscarProfessor = db.prepare(
-  "SELECT id FROM professores WHERE nome = ?"
-);
+      if (!subject) return;
 
-const buscarAmbiente = db.prepare(
-  "SELECT id FROM ambientes WHERE nome = ?"
-);
+      lessons.push({
+        className,
+        weekday,
+        lessonNumber: Number(lessonLabel.slice(4)),
+        groupName: GROUP_NAMES[groupIndex],
+        startTime: timeRange.startTime,
+        endTime: timeRange.endTime,
+        subject,
+        teacher: readText(rows[rowIndex + 1]?.[column]),
+        room: readText(rows[rowIndex + 2]?.[column])
+      });
+    });
+  }
 
-const inserirHorario = db.prepare(`
-  INSERT INTO horarios (
-    turma_id,
-    disciplina_id,
-    professor_id,
-    ambiente_id,
-    dia_semana,
-    numero_aula,
-    grupo,
-    inicio,
-    fim
-  )
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT(turma_id, dia_semana, numero_aula, grupo)
-  DO UPDATE SET
-    disciplina_id = excluded.disciplina_id,
-    professor_id = excluded.professor_id,
-    ambiente_id = excluded.ambiente_id,
-    inicio = excluded.inicio,
-    fim = excluded.fim
-`);
+  return lessons;
+}
 
-const importar = db.transaction(() => {
-  for (const aula of registrosValidados) {
-    const codigoTurma =
-      aula.turma.match(/\(([^)]+)\)/)?.[1];
+function extractLessons(rows) {
+  const classBlocks = findClassBlocks(rows);
+  const lessons = [];
 
-    if (!codigoTurma) {
-      throw new Error(`Código da turma não encontrado: ${aula.turma}`);
+  classBlocks.forEach((block, blockIndex) => {
+    const endIndex = classBlocks[blockIndex + 1]?.rowIndex ?? rows.length;
+
+    for (let rowIndex = block.rowIndex; rowIndex < endIndex; rowIndex += 1) {
+      lessons.push(...extractLessonsFromRow({ rows, rowIndex, className: block.className }));
     }
+  });
 
-    inserirTurma.run(codigoTurma, aula.turma);
-    inserirDisciplina.run(aula.disciplina, aula.disciplina);
+  return lessons;
+}
 
-    const turmaId = buscarTurma.get(codigoTurma).id;
-    const disciplinaId = buscarDisciplina.get(aula.disciplina).id;
+function extractClassCode(className) {
+  const classCode = className.match(CLASS_CODE_PATTERN)?.[1];
 
-    let professorId = null;
-    let ambienteId = null;
+  if (!classCode) {
+    throw new Error(`Código da turma não encontrado: ${className}`);
+  }
 
-    if (aula.professor) {
-      inserirProfessor.run(aula.professor);
-      professorId = buscarProfessor.get(aula.professor).id;
-    }
+  return classCode;
+}
 
-    if (aula.ambiente) {
-      inserirAmbiente.run(aula.ambiente);
-      ambienteId = buscarAmbiente.get(aula.ambiente).id;
-    }
+function clearImportedTables() {
+  for (const tableName of IMPORTED_TABLES) {
+    db.prepare(`DELETE FROM ${tableName}`).run();
+  }
 
-    inserirHorario.run(
-      turmaId,
-      disciplinaId,
-      professorId,
-      ambienteId,
-      aula.dia_semana,
-      aula.numero_aula,
-      aula.grupo,
-      aula.inicio,
-      aula.fim
-    );
+  const placeholders = IMPORTED_TABLES.map(() => "?").join(", ");
+  db.prepare(`DELETE FROM sqlite_sequence WHERE name IN (${placeholders})`).run(...IMPORTED_TABLES);
+}
+
+// Busca o id pela chave única; só insere se ainda não existir (evita "buracos" nos ids)
+function createIdResolver({ selectSql, insertSql }) {
+  const selectStatement = db.prepare(selectSql);
+  const insertStatement = db.prepare(insertSql);
+
+  return (...values) => {
+    const existingRow = selectStatement.get(values[0]);
+
+    if (existingRow) return existingRow.id;
+
+    return Number(insertStatement.run(...values).lastInsertRowid);
+  };
+}
+
+function createResolvers() {
+  return {
+    classId: createIdResolver({
+      selectSql: "SELECT id FROM turmas WHERE codigo = ?",
+      insertSql: "INSERT INTO turmas (codigo, nome) VALUES (?, ?)"
+    }),
+    subjectId: createIdResolver({
+      selectSql: "SELECT id FROM disciplinas WHERE codigo = ?",
+      insertSql: "INSERT INTO disciplinas (codigo, nome) VALUES (?, ?)"
+    }),
+    teacherId: createIdResolver({
+      selectSql: "SELECT id FROM professores WHERE nome = ?",
+      insertSql: "INSERT INTO professores (nome) VALUES (?)"
+    }),
+    roomId: createIdResolver({
+      selectSql: "SELECT id FROM ambientes WHERE nome = ?",
+      insertSql: "INSERT INTO ambientes (nome) VALUES (?)"
+    })
+  };
+}
+
+function createInsertScheduleStatement() {
+  return db.prepare(`
+    INSERT INTO horarios (
+      turma_id, disciplina_id, professor_id, ambiente_id,
+      dia_semana, numero_aula, grupo, inicio, fim
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+}
+
+function insertLesson({ lesson, resolvers, insertSchedule }) {
+  const classId = resolvers.classId(extractClassCode(lesson.className), lesson.className);
+  const subjectId = resolvers.subjectId(lesson.subject, lesson.subject);
+  const teacherId = lesson.teacher ? resolvers.teacherId(lesson.teacher) : null;
+  const roomId = lesson.room ? resolvers.roomId(lesson.room) : null;
+
+  insertSchedule.run(
+    classId,
+    subjectId,
+    teacherId,
+    roomId,
+    lesson.weekday,
+    lesson.lessonNumber,
+    lesson.groupName,
+    lesson.startTime,
+    lesson.endTime
+  );
+}
+
+// Cadastra todos os ambientes e docentes da aba Listas, mesmo os que não têm aula
+function insertCatalog({ catalog, resolvers }) {
+  catalog.rooms.forEach((roomName) => resolvers.roomId(roomName));
+  catalog.teachers.forEach((teacherName) => resolvers.teacherId(teacherName));
+}
+
+// Tudo dentro de uma transação: se algo falhar, o banco volta ao estado anterior
+const replaceAllData = db.transaction(({ lessons, catalog }) => {
+  clearImportedTables();
+
+  const resolvers = createResolvers();
+  const insertSchedule = createInsertScheduleStatement();
+
+  insertCatalog({ catalog, resolvers });
+
+  for (const lesson of lessons) {
+    insertLesson({ lesson, resolvers, insertSchedule });
   }
 });
 
-importar();
+function printSummary() {
+  const totals = IMPORTED_TABLES.map((tableName) => ({
+    tabela: tableName,
+    total: db.prepare(`SELECT COUNT(*) AS total FROM ${tableName}`).get().total
+  }));
 
-console.log("\nImportação concluída!");
+  const lessonsPerClass = db.prepare(`
+    SELECT t.id, t.codigo, COUNT(h.id) AS aulas
+    FROM turmas t
+    LEFT JOIN horarios h ON h.turma_id = t.id
+    GROUP BY t.id
+    ORDER BY t.id
+  `).all();
 
-console.table({
-  turmas: db.prepare("SELECT COUNT(*) AS total FROM turmas").get().total,
-  disciplinas: db.prepare("SELECT COUNT(*) AS total FROM disciplinas").get().total,
-  professores: db.prepare("SELECT COUNT(*) AS total FROM professores").get().total,
-  ambientes: db.prepare("SELECT COUNT(*) AS total FROM ambientes").get().total,
-  horarios: db.prepare("SELECT COUNT(*) AS total FROM horarios").get().total
-});
+  console.log("\nTotais no banco:");
+  console.table(totals);
+  console.log("Aulas por turma:");
+  console.table(lessonsPerClass);
+}
+
+function main() {
+  const workbook = XLSX.readFile(SPREADSHEET_PATH);
+  const lessons = extractLessons(readSheetRows({ workbook, sheetName: SCHEDULE_SHEET_NAME }));
+  const catalog = extractCatalog(readSheetRows({ workbook, sheetName: LISTS_SHEET_NAME }));
+
+  console.log(`Aulas extraídas da planilha: ${lessons.length}`);
+  console.log(`Ambientes na aba Listas: ${catalog.rooms.length}`);
+  console.log(`Docentes na aba Listas: ${catalog.teachers.length}`);
+
+  if (lessons.length === 0) {
+    throw new Error("Nenhuma aula encontrada. O banco não foi alterado.");
+  }
+
+  replaceAllData({ lessons, catalog });
+  console.log("Importação concluída!");
+  printSummary();
+}
+
+try {
+  main();
+} catch (error) {
+  console.error("Falha na importação:", error.message);
+  process.exitCode = 1;
+}

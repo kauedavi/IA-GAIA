@@ -17,7 +17,13 @@ export async function chatService(message) {
       return { message: response.text || "Não consegui gerar uma resposta.", action };
     }
 
-    contents.push({ role: "model", parts: calls.map((call) => ({ functionCall: call })) });
+    const modelParts = response.candidates?.[0]?.content?.parts;
+    contents.push({
+      role: "model",
+      parts: modelParts?.length
+        ? modelParts
+        : calls.map((call) => ({ functionCall: call }))
+    });
     const functionParts = calls.map((call) => {
       const handler = toolHandlers[call.name];
       if (!handler) throw new Error(`Tool não registrada: ${call.name}`);

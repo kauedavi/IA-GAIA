@@ -794,7 +794,8 @@ function perguntarIA(txt) {
   estado("pensando");
   var dg = digitando(),
     id = "p" + ++pedidoN;
-  var controller = new AbortController();
+  var controller =
+    typeof AbortController !== "undefined" ? new AbortController() : null;
   chatRequestController = controller;
   chatRequestId = id;
   pendentes[id] = { dg: dg, txt: txt, controller: controller };
@@ -804,15 +805,24 @@ function perguntarIA(txt) {
     var pedido = pendentes[id];
     if (!pedido) return;
     pedido.timeout = true;
-    controller.abort();
+    if (controller) {
+      controller.abort();
+    } else {
+      window.gaiaResposta(
+        id,
+        JSON.stringify({ ok: false, erro: "tempo limite ao buscar resposta" }),
+      );
+    }
   }, 30000);
 
-  fetch(window.GAIA_API_URL || "http://localhost:3000/api/chat", {
+  var opcoesFetch = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message: txt }),
-    signal: controller.signal,
-  })
+  };
+  if (controller) opcoesFetch.signal = controller.signal;
+
+  fetch(window.GAIA_API_URL || "http://localhost:3000/api/chat", opcoesFetch)
     .then(function (response) {
       return response.json().catch(function () {
         throw new Error("O servidor retornou uma resposta inválida.");

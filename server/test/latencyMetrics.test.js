@@ -39,10 +39,10 @@ test("logs chat latency without sensitive content and summarizes latency percent
   toolHandlers.consultar_rota = () => ({ action: { type: "ROUTE" }, result: "ok" });
   gemini.models.generateContent = async () => {
     generateCalls += 1;
-    if (generateCalls === 1) {
-      throw Object.assign(new Error("private provider error"), { status: 400 });
+    if (generateCalls <= 3) {
+      throw Object.assign(new Error("temporary provider error"), { status: 503 });
     }
-    if (generateCalls === 2) {
+    if (generateCalls === 4) {
       return {
         functionCalls: [{ name: "consultar_rota", args: { destination: "sala 304" } }],
       };
@@ -83,9 +83,9 @@ test("logs chat latency without sensitive content and summarizes latency percent
   assert.equal(metrics[0].status, 200);
   assert.equal(metrics[0].service_activity, "first");
   assert.equal(metrics[0].rounds, 2);
-  assert.equal(metrics[0].gemini_attempts, 3);
-  assert.equal(metrics[0].gemini_retries, 0);
-  assert.equal(metrics[0].gemini_failures, 1);
+  assert.equal(metrics[0].gemini_attempts, 5);
+  assert.equal(metrics[0].gemini_retries, 2);
+  assert.equal(metrics[0].gemini_failures, 3);
   assert.equal(metrics[0].models_used.length, 2);
   assert.equal(metrics[0].selected_model, "test-primary-model");
   assert.equal(metrics[0].fallback_attempted, true);
@@ -93,6 +93,8 @@ test("logs chat latency without sensitive content and summarizes latency percent
   assert.deepEqual(
     metrics[0].gemini_calls.map(({ model, round, outcome }) => [model, round, outcome]),
     [
+      ["test-primary-model", 1, "failure"],
+      ["test-primary-model", 1, "failure"],
       ["test-primary-model", 1, "failure"],
       ["test-fallback-model", 1, "success"],
       ["test-primary-model", 2, "success"],
@@ -159,4 +161,47 @@ test("separates Gemini retry backoff from provider-call duration", async () => {
   assert.equal(metrics.gemini_calls[1].outcome, "success");
   assert.ok(metrics.duration_ms - metrics.gemini_duration_ms >= 900);
   assert.ok(!JSON.stringify(metrics).includes("RETRY_PROMPT_MUST_NOT_BE_LOGGED"));
+});
+
+test("does not retry or use fallback for permanent Gemini validation errors", async () => {
+  const originalGenerateContent = gemini.models.generateContent;
+  const originalLog = console.log;
+  const originalError = console.error;
+  const logLines = [];
+  const loggedErrors = [];
+  let generateCalls = 0;
+  let requestOptions;
+
+  gemini.models.generateContent = async ({ config }) => {
+    generateCalls += 1;
+    requestOptions = config.httpOptions;
+    throw Object.assign(new Error("invalid provider request"), { status: 400 });
+  };
+  console.log = (line) => logLines.push(line);
+  console.error = (error) => loggedErrors.push(error);
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message: "VALIDATION_PROMPT_MUST_NOT_BE_LOGGED" }),
+    });
+    assert.equal(response.status, 400);
+  } finally {
+    console.log = originalLog;
+    console.error = originalError;
+    gemini.models.generateContent = originalGenerateContent;
+  }
+
+  const metrics = JSON.parse(logLines[0]);
+  assert.equal(generateCalls, 1);
+  assert.equal(loggedErrors.length, 1);
+  assert.equal(loggedErrors[0].status, 400);
+  assert.equal(metrics.gemini_attempts, 1);
+  assert.equal(metrics.gemini_retries, 0);
+  assert.equal(metrics.fallback_attempted, false);
+  assert.equal(metrics.fallback_used, false);
+  assert.ok(requestOptions.timeout > 0 && requestOptions.timeout <= 25_000);
+  assert.deepEqual(requestOptions.retryOptions, { attempts: 1 });
+  assert.ok(!JSON.stringify(metrics).includes("VALIDATION_PROMPT_MUST_NOT_BE_LOGGED"));
 });

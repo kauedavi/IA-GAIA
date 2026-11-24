@@ -5,14 +5,27 @@ import { performance } from "node:perf_hooks";
 
 const MAX_ROUNDS = 4;
 const MAX_RETRIES = 3;
+const CHAT_DEADLINE_MS = 25_000;
+const RETRYABLE_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+const RETRYABLE_ERROR_CODES = new Set([
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "EAI_AGAIN",
+  "ETIMEDOUT",
+  "ENETUNREACH",
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_SOCKET",
+]);
 
 export async function chatService(message, metrics) {
+  const deadline = performance.now() + CHAT_DEADLINE_MS;
   let contents = [{ role: "user", parts: [{ text: message }] }];
   let action = { type: "NONE" };
 
   for (let round = 0; round < MAX_ROUNDS; round += 1) {
     if (metrics) metrics.rounds += 1;
-    const response = await generateWithFallback(contents, metrics);
+    const response = await generateWithFallback(contents, metrics, deadline);
 
     const calls = response.functionCalls || [];
     if (!calls.length) {
@@ -48,15 +61,20 @@ export async function chatService(message, metrics) {
   throw new Error("Limite de chamadas de ferramentas excedido.");
 }
 
-async function generateWithFallback(contents, metrics) {
+async function generateWithFallback(contents, metrics, deadline) {
   const models = [geminiModel, geminiFallbackModel].filter(
     (model, index, list) => model && list.indexOf(model) === index
   );
   let lastError;
 
   for (const model of models) {
-    if (metrics && model !== models[0]) metrics.fallback_attempted = true;
     for (let attempt = 0; attempt < MAX_RETRIES; attempt += 1) {
+      const remainingMs = Math.floor(deadline - performance.now());
+      if (remainingMs <= 0) throw createDeadlineError();
+      if (attempt === 0 && metrics && model !== models[0]) {
+        metrics.fallback_attempted = true;
+      }
+
       const startedAt = performance.now();
       if (metrics) {
         metrics.gemini_attempts += 1;
@@ -72,7 +90,11 @@ async function generateWithFallback(contents, metrics) {
           config: {
             systemInstruction,
             tools: toolDeclarations,
-            temperature: 0.2
+            temperature: 0.2,
+            httpOptions: {
+              timeout: remainingMs,
+              retryOptions: { attempts: 1 },
+            },
           }
         });
         outcome = "success";
@@ -85,9 +107,8 @@ async function generateWithFallback(contents, metrics) {
         lastError = error;
         errorStatus = Number.isInteger(error?.status) ? error.status : null;
         if (metrics) metrics.gemini_failures += 1;
-        if (![429, 500, 503].includes(error.status) || attempt === MAX_RETRIES - 1) {
-          break;
-        }
+        if (!isTransientError(error)) throw error;
+        if (attempt === MAX_RETRIES - 1) break;
       } finally {
         const duration = performance.now() - startedAt;
         if (metrics) {
@@ -103,12 +124,27 @@ async function generateWithFallback(contents, metrics) {
         }
       }
       const retryDelay = 1000 * (attempt + 1);
-      if (metrics) metrics.gemini_retry_delay_ms += retryDelay;
-      await delay(retryDelay);
+      const delayMs = Math.min(retryDelay, deadline - performance.now());
+      if (delayMs <= 0) throw createDeadlineError();
+      if (metrics) metrics.gemini_retry_delay_ms += delayMs;
+      await delay(delayMs);
     }
   }
 
   throw lastError;
+}
+
+function isTransientError(error) {
+  if (RETRYABLE_STATUSES.has(error?.status)) return true;
+  if (error?.name === "TimeoutError" || error?.name === "AbortError") return true;
+  const codes = [error?.code, error?.cause?.code];
+  return codes.some((code) => RETRYABLE_ERROR_CODES.has(code));
+}
+
+function createDeadlineError() {
+  const error = new Error("Tempo limite de processamento excedido.");
+  error.status = 503;
+  return error;
 }
 
 function delay(milliseconds) {

@@ -15,6 +15,15 @@ export const gpsDeclaration = {
 export function consultarRota({ destino }) {
   const sala = findSala(destino);
   return sala
-    ? { encontrado: true, sala, fonte: "planilha_excel", action: { type: "NAVIGATE_TO_ROOM", roomId: sala.id } }
+    ? {
+        encontrado: true,
+        sala: {
+          nome: sala.nome,
+          bloco: sala.bloco,
+          andar: sala.andar,
+          dica: sala.dica,
+        },
+        action: { type: "NAVIGATE_TO_ROOM", roomId: sala.id },
+      }
     : { encontrado: false, mensagem: "Sala não encontrada na planilha atual." };
 }

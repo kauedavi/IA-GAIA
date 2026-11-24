@@ -29,6 +29,7 @@ export function latencyMetrics(req, res, next) {
     gemini_retry_delay_ms: 0,
     gemini_calls: [],
     tool_duration_ms: 0,
+    tool_response_bytes: 0,
     models_used: [],
     selected_model: null,
     fallback_attempted: false,

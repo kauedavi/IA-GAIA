@@ -52,8 +52,12 @@ export async function chatService(message, metrics) {
           metrics.tool_duration_ms += performance.now() - startedAt;
         }
       }
-      if (result.action) action = result.action;
-      return { functionResponse: { name: call.name, response: result } };
+      const { action: resultAction, ...toolResponse } = result;
+      if (resultAction) action = resultAction;
+      if (metrics) {
+        metrics.tool_response_bytes += Buffer.byteLength(JSON.stringify(toolResponse), "utf8");
+      }
+      return { functionResponse: { name: call.name, response: toolResponse } };
     });
     contents.push({ role: "user", parts: functionParts });
   }

@@ -16,6 +16,11 @@ function summarizeGroup(records) {
     (total, record) => total + (Number.isFinite(record.gemini_attempts) ? record.gemini_attempts : 0),
     0
   );
+  const toolResponseBytes = records.reduce(
+    (total, record) =>
+      total + (Number.isFinite(record.tool_response_bytes) ? record.tool_response_bytes : 0),
+    0
+  );
   const totalDurations = records
     .map((record) => record.duration_ms)
     .filter((duration) => Number.isFinite(duration) && duration >= 0);
@@ -32,6 +37,7 @@ function summarizeGroup(records) {
     fallback_successes: fallbackSuccesses,
     fallback_success_rate_percent: percentage(fallbackSuccesses, records.length),
     mean_gemini_attempts: Math.round((geminiAttempts / records.length) * 100) / 100,
+    mean_tool_response_bytes: Math.round((toolResponseBytes / records.length) * 100) / 100,
     duration_ms: {
       p50: percentile(totalDurations, 0.5),
       p95: percentile(totalDurations, 0.95),

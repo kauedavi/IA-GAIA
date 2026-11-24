@@ -245,7 +245,8 @@ sem incluir a mensagem, argumentos de ferramentas, chaves ou texto de erro do
 Gemini. O registro inclui duração total e acumulada do Gemini, duração das
 ferramentas, rodadas, tentativas/retries/falhas, tempo de backoff, duração e
 resultado de cada chamada Gemini, modelos, ferramentas acionadas, status HTTP,
-tamanho aproximado da resposta e intervalo desde a requisição anterior.
+tamanho aproximado da resposta, bytes acumulados das respostas de ferramentas
+encaminhadas ao Gemini e intervalo desde a requisição anterior.
 `service_activity` classifica a primeira chamada, chamadas ativas/concurrentes
 e chamadas após pelo menos cinco minutos sem requisições. Essa classificação
 descreve o processo da API; o tempo de inicialização anterior ao recebimento da
@@ -257,6 +258,10 @@ por estado de atividade, taxa de erros e uso de fallback com:
 ```bash
 node server/scripts/summarize-latency.js caminho/para/api-logs.jsonl
 ```
+
+O resumo também informa a média de bytes de respostas de ferramentas por
+requisição, permitindo comparar o payload antes e depois de mudanças nas
+ferramentas.
 
 Para a comparação de produção, colete no mesmo deploy chamadas após períodos
 ociosos e chamadas subsequentes. O resumo local não envia dados a serviços

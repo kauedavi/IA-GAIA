@@ -34,11 +34,16 @@ test("logs chat latency without sensitive content and summarizes latency percent
   const originalRouteHandler = toolHandlers.consultar_rota;
   const originalLog = console.log;
   const logLines = [];
+  const geminiRequests = [];
   let generateCalls = 0;
 
-  toolHandlers.consultar_rota = () => ({ action: { type: "ROUTE" }, result: "ok" });
-  gemini.models.generateContent = async () => {
+  toolHandlers.consultar_rota = () => ({
+    action: { type: "NAVIGATE_TO_ROOM", roomId: "sala-304" },
+    result: "ok",
+  });
+  gemini.models.generateContent = async (request) => {
     generateCalls += 1;
+    geminiRequests.push(request);
     if (generateCalls <= 3) {
       throw Object.assign(new Error("temporary provider error"), { status: 503 });
     }
@@ -60,6 +65,10 @@ test("logs chat latency without sensitive content and summarizes latency percent
     const successBody = await successResponse.json();
     assert.equal(successResponse.status, 200);
     assert.equal(successBody.data.message, "Resposta de teste");
+    assert.deepEqual(successBody.data.action, {
+      type: "NAVIGATE_TO_ROOM",
+      roomId: "sala-304",
+    });
 
     const invalidResponse = await fetch(apiUrl, {
       method: "POST",
@@ -101,6 +110,12 @@ test("logs chat latency without sensitive content and summarizes latency percent
     ]
   );
   assert.deepEqual(metrics[0].tools_called, ["consultar_rota"]);
+  assert.equal(metrics[0].tool_response_bytes, Buffer.byteLength('{"result":"ok"}'));
+  const forwardedFunctionResponse = geminiRequests[4].contents
+    .flatMap((content) => content.parts || [])
+    .find((part) => part.functionResponse);
+  assert.deepEqual(forwardedFunctionResponse.functionResponse.response, { result: "ok" });
+  assert.ok(!JSON.stringify(forwardedFunctionResponse).includes("NAVIGATE_TO_ROOM"));
   assert.ok(metrics[0].duration_ms >= metrics[0].gemini_duration_ms);
   assert.ok(metrics[0].response_bytes > 0);
   assert.equal(metrics[1].status, 400);
@@ -118,6 +133,7 @@ test("logs chat latency without sensitive content and summarizes latency percent
   ]);
   assert.deepEqual(summary.overall.duration_ms, { p50: 20, p95: 40 });
   assert.deepEqual(summary.overall.gemini_duration_ms, { p50: 0, p95: 4 });
+  assert.equal(summary.overall.mean_tool_response_bytes, 3.75);
   assert.equal(summary.overall.error_rate_percent, 75);
   assert.equal(summary.overall.fallback_attempt_rate_percent, 25);
   assert.equal(summary.by_service_activity.active.requests, 3);

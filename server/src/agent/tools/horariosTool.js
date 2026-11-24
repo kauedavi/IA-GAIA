@@ -14,6 +14,16 @@ export const horariosDeclaration = {
 };
 
 export function consultarHorarios({ turma, dia, sala } = {}) {
-  const result = getHorarios({ turma, dia, sala });
-  return { encontrados: result.length, horarios: result, fonte: "planilha_excel" };
+  const horarios = getHorarios({ turma, dia, sala }).map(
+    ({ turma, dia, inicio, fim, disciplina, professor, sala }) => ({
+      turma,
+      dia,
+      inicio,
+      fim,
+      disciplina,
+      professor,
+      sala,
+    })
+  );
+  return { encontrados: horarios.length, horarios };
 }

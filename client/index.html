@@ -329,11 +329,7 @@
   </div>
   <div id="toast"></div>
   <script>
-    var isLocalFrontend = window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1";
-    window.GAIA_API_URL = isLocalFrontend
-      ? "http://localhost:3000/api/chat"
-      : "https://gaia-production-31cc76bd.up.railway.app/api/chat";
+    window.GAIA_API_URL = "https://gaia-production-31cc76bd.up.railway.app/api/chat";
   </script>
   <script type="module" src="src/main.js"></script>
 </body>

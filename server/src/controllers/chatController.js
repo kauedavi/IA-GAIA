@@ -6,7 +6,7 @@ export async function chatController(req, res, next) {
     return res.status(400).json({ success: false, error: "message deve conter entre 1 e 2000 caracteres." });
   }
   try {
-    const data = await chatService(message);
+    const data = await chatService(message, req.latencyMetrics);
     return res.json({ success: true, data });
   } catch (error) {
     return next(error);

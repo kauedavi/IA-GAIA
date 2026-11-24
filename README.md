@@ -231,3 +231,33 @@ A planilha pode usar estas abas:
 - `Cursos`: colunas `Nome`, `Código`, `Nível`, `Turma`, `Turno`, `Modalidade` e `Descrição`.
 
 Os nomes das abas e colunas são normalizados, sem diferenciar maiúsculas, acentos ou caracteres como espaço e `_`. A tela de Configurações permite enviar a planilha e consultar a quantidade de registros carregados.
+
+## Testes e linha de base de latência da API
+
+Execute os testes automatizados do backend na raiz do projeto:
+
+```bash
+npm test
+```
+
+Cada `POST /api/chat` emite uma linha JSON `api_latency` nos logs do servidor,
+sem incluir a mensagem, argumentos de ferramentas, chaves ou texto de erro do
+Gemini. O registro inclui duração total e acumulada do Gemini, duração das
+ferramentas, rodadas, tentativas/retries/falhas, tempo de backoff, duração e
+resultado de cada chamada Gemini, modelos, ferramentas acionadas, status HTTP,
+tamanho aproximado da resposta e intervalo desde a requisição anterior.
+`service_activity` classifica a primeira chamada, chamadas ativas/concurrentes
+e chamadas após pelo menos cinco minutos sem requisições. Essa classificação
+descreve o processo da API; o tempo de inicialização anterior ao recebimento da
+requisição pelo Node não é medido.
+
+Salve as linhas JSON dos logs em um arquivo `.jsonl` e calcule p50/p95 geral e
+por estado de atividade, taxa de erros e uso de fallback com:
+
+```bash
+node server/scripts/summarize-latency.js caminho/para/api-logs.jsonl
+```
+
+Para a comparação de produção, colete no mesmo deploy chamadas após períodos
+ociosos e chamadas subsequentes. O resumo local não envia dados a serviços
+externos; os logs usados devem conter apenas os registros estruturados da API.

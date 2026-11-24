@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import XLSX from "xlsx";
+import { fallbackSalas } from "../data/fallbackSalas.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const defaultPath = path.resolve(currentDir, "../../data/gaia.xlsx");
@@ -170,10 +171,23 @@ export function getSalas() {
 }
 
 export function findSala(destino) {
-  const query = String(destino || "").trim().toLowerCase();
-  return state.salas.find((item) =>
+  const normalize = (value) => String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+  const query = normalize(destino);
+  const spreadsheetMatch = state.salas.find((item) =>
     String(item.id).toLowerCase() === query ||
     String(item.nome).toLowerCase().includes(query)
+  );
+  if (spreadsheetMatch) return spreadsheetMatch;
+
+  return fallbackSalas.find((item) =>
+    normalize(item.id) === query ||
+    normalize(item.nome).includes(query) ||
+    query.includes(normalize(item.id)) ||
+    (normalize(item.id) === "biblioteca" && ["biblioteca", "livros", "estudo"].some((alias) => query.includes(alias)))
   ) || null;
 }
 

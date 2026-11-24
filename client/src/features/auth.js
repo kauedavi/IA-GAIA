@@ -313,6 +313,6 @@ function iniciarSessao() {
     return;
   }
   montarNav();
-  irPara("tGaia");
+  irPara("tInicio");
   agendarLembretes();
 }

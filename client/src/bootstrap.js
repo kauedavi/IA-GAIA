@@ -99,6 +99,7 @@ renderRota = function () {
 };
 // ═════ INÍCIO ═════
 aplicarTema();
+aplicarAcessibilidade();
 setTimeout(ajustarVB, 50);
 iniciarSessao();
 setInterval(function () {

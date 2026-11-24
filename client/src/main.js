@@ -11,6 +11,7 @@ const modules = [
   "./features/agenda.js",
   "./features/unit.js",
   "./map/map3d.js",
+  "./map/maquete3d.js",
   "./bootstrap.js"
 
 ];

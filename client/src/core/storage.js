@@ -180,6 +180,11 @@ try {
   CFG = {};
 }
 if (CFG.voz === undefined) CFG.voz = true;
+if (CFG.textoEscala === undefined) CFG.textoEscala = 1;
+if (CFG.contraste === undefined) CFG.contraste = false;
+if (CFG.acessivel === undefined) CFG.acessivel = false;
+if (CFG.navVoz === undefined) CFG.navVoz = false;
+if (CFG.som === undefined) CFG.som = false;
 if (!CFG.de || !sala(CFG.de))
   CFG.de = sala("entrada") ? "entrada" : (D.salas[0] || {}).id;
 if (CFG.lembrete === undefined) CFG.lembrete = 10;

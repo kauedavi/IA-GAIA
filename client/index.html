@@ -63,6 +63,53 @@
       </div>
     </section>
 
+    <section id="tInicio" class="tela inicio-tela" aria-hidden="true">
+      <div class="inicio-titulo-menu">Início</div>
+      <button id="btInicioAjustes" class="inicio-ajustes" type="button"
+        aria-label="Abrir configurações">⚙</button>
+      <div class="inicio-boas-vindas">
+        <span class="inicio-marca">G.A.I.A</span>
+        <h1>Como podemos ajudar?</h1>
+      </div>
+      <div class="inicio-destaques">
+        <button class="inicio-imagem-card" type="button" data-inicio="tMapa"
+          aria-label="Ver mapa da escola">
+          <img src="src/img/card-mapa.png" alt="Ver mapa da escola" />
+        </button>
+        <button class="inicio-imagem-card" type="button" data-inicio="tGaia"
+          aria-label="Falar com G.A.I.A">
+          <img src="src/img/card-chat-gaia.png" alt="Falar com G.A.I.A." />
+        </button>
+      </div>
+
+      <section class="inicio-secao" aria-labelledby="tituloAvisosInstitucionais">
+        <h2 id="tituloAvisosInstitucionais">Avisos institucionais</h2>
+        <div id="listaAvisosInstitucionais" class="inicio-avisos" aria-live="polite"></div>
+      </section>
+
+      <section class="inicio-secao" aria-labelledby="tituloOutrasOpcoes">
+        <h2 id="tituloOutrasOpcoes">Outras opções</h2>
+        <div class="inicio-grade">
+          <button class="inicio-card" type="button" data-inicio="tHorarios">
+            <span class="inicio-card-icone" aria-hidden="true">▣</span>
+            <span><b>Consultar horários</b><small>Veja sua grade de aulas</small></span>
+          </button>
+          <button class="inicio-card" type="button" data-inicio="tAgenda">
+            <span class="inicio-card-icone" aria-hidden="true">☷</span>
+            <span><b>Agenda institucional</b><small>Confira avisos e eventos</small></span>
+          </button>
+          <button class="inicio-card" type="button" data-inicio="tCursos">
+            <span class="inicio-card-icone" aria-hidden="true">▤</span>
+            <span><b>Acessar cursos</b><small>Veja as opções da unidade</small></span>
+          </button>
+          <button class="inicio-card" type="button" data-inicio="tUnidade">
+            <span class="inicio-card-icone" aria-hidden="true">⌂</span>
+            <span><b>Sobre a unidade</b><small>Endereço, contato e informações</small></span>
+          </button>
+        </div>
+      </section>
+    </section>
+
     <section id="tGaia" class="tela chat-home" aria-hidden="true">
       <header class="chat-header">
         <img class="senai-logo"
@@ -198,6 +245,37 @@
         <h2>Configurações</h2>
       </div>
       <div id="cartaoConta"></div>
+      <h3>Acessibilidade</h3>
+      <div class="card configuracao-secao acessibilidade-secao">
+        <div class="campo">
+          <span id="rotTamanhoTexto" class="rotuloCampo">Tamanho do texto</span>
+          <div id="aTamanho" class="seg largo" role="radiogroup" aria-labelledby="rotTamanhoTexto">
+            <button type="button" data-v="1" role="radio" aria-checked="true">Normal</button>
+            <button type="button" data-v="1.15" role="radio" aria-checked="false">Grande</button>
+            <button type="button" data-v="1.3" role="radio" aria-checked="false">Muito grande</button>
+          </div>
+        </div>
+        <div class="alternar">
+          <span><b>Alto contraste</b><span class="nota bloco">Preto, branco e amarelo, com bordas mais fortes.</span></span>
+          <button id="swContraste" class="sw" type="button" role="switch"
+            aria-checked="false" aria-label="Alto contraste"></button>
+        </div>
+        <div class="alternar">
+          <span><b>Rota sem escadas</b><span class="nota bloco">Usa o elevador para o pavimento superior quando houver uma rota disponível.</span></span>
+          <button id="swAcessivel" class="sw" type="button" role="switch"
+            aria-checked="false" aria-label="Rota sem escadas"></button>
+        </div>
+        <div class="alternar">
+          <span><b>Ler os passos em voz alta</b><span class="nota bloco">Durante a navegação.</span></span>
+          <button id="swNavVoz" class="sw" type="button" role="switch"
+            aria-checked="false" aria-label="Ler os passos em voz alta"></button>
+        </div>
+        <div class="alternar">
+          <span><b>Som a cada passo</b><span class="nota bloco">Um bipe curto quando o passo muda.</span></span>
+          <button id="swSom" class="sw" type="button" role="switch"
+            aria-checked="false" aria-label="Som a cada passo"></button>
+        </div>
+      </div>
       <div class="card configuracao-secao">
         <h3>Informações pessoais</h3>
         <label>Nome <input id="aNome" autocomplete="name" /></label>
@@ -236,16 +314,6 @@
           class="botao sec" type="button">Importar</button><button id="btExemplo" class="botao perigo"
           type="button">Voltar ao exemplo</button><input id="arqImport" type="file"
           accept=".json,application/json,text/plain" hidden />
-      </div>
-      <div class="card configuracao-secao">
-        <h3>Planilha de horários e salas</h3>
-        <p class="nota">Envie um arquivo Excel (.xlsx/.xls) ou CSV. Use abas chamadas Horários, Salas e Cursos.</p>
-        <input id="arqPlanilha" type="file" accept=".xlsx,.xls,.csv" />
-        <div class="acoes configuracao-acoes">
-          <button id="btEnviarPlanilha" class="botao sec" type="button">Atualizar planilha</button>
-          <button id="btStatusPlanilha" class="botao sec" type="button">Ver status</button>
-        </div>
-        <div id="statusPlanilha" class="nota" role="status" aria-live="polite"></div>
       </div>
       <button id="btSair" class="botao perigo" type="button">Sair da conta</button>
       <div id="versao" class="nota"></div>

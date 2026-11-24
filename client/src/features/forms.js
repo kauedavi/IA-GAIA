@@ -45,6 +45,7 @@ function renderAjustes() {
   $("swTema").classList.toggle("on", CFG.tema === "claro");
   $("swTema").textContent =
     CFG.tema === "claro" ? "☀️ Usar modo escuro" : "🌙 Usar modo claro";
+  renderAcessibilidade();
   $("listaSalas").innerHTML = D.salas
     .map(function (s) {
       var b = bloco(s.bloco);
@@ -125,6 +126,60 @@ function renderAjustes() {
     pf === "visitante" ? "Sair do modo visitante" : "Sair da conta";
   montarVozes();
 }
+function marcarAcessibilidade(id, value) {
+  var button = $(id);
+  if (!button) return;
+  button.classList.toggle("on", !!value);
+  button.setAttribute("aria-checked", String(!!value));
+}
+function renderAcessibilidade() {
+  var tamanho = $("aTamanho");
+  if (tamanho) {
+    tamanho.querySelectorAll("button").forEach(function (button) {
+      var selected = Math.abs(+button.dataset.v - (+CFG.textoEscala || 1)) < 0.01;
+      button.classList.toggle("on", selected);
+      button.setAttribute("aria-checked", String(selected));
+    });
+  }
+  marcarAcessibilidade("swContraste", CFG.contraste);
+  marcarAcessibilidade("swAcessivel", CFG.acessivel);
+  marcarAcessibilidade("swNavVoz", CFG.navVoz);
+  marcarAcessibilidade("swSom", CFG.som);
+}
+function aplicarAcessibilidade() {
+  var root = document.documentElement;
+  root.style.setProperty("--escala", String(+CFG.textoEscala || 1));
+  if (CFG.contraste) root.dataset.contraste = "alto";
+  else delete root.dataset.contraste;
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+    root.dataset.movimento = "reduzido";
+  else delete root.dataset.movimento;
+}
+if ($("aTamanho")) {
+  $("aTamanho").querySelectorAll("button").forEach(function (button) {
+    button.onclick = function () {
+      CFG.textoEscala = +button.dataset.v;
+      salvarCfg();
+      aplicarAcessibilidade();
+      renderAcessibilidade();
+    };
+  });
+}
+["swContraste", "swAcessivel", "swNavVoz", "swSom"].forEach(function (id) {
+  $(id).onclick = function () {
+    var config = {
+      swContraste: "contraste",
+      swAcessivel: "acessivel",
+      swNavVoz: "navVoz",
+      swSom: "som",
+    };
+    CFG[config[id]] = !CFG[config[id]];
+    salvarCfg();
+    aplicarAcessibilidade();
+    renderAcessibilidade();
+    if (id === "swSom" && CFG.som && window.gaiaBipe) window.gaiaBipe();
+  };
+});
 ["aNome", "aUnidade", "aTurma"].forEach(function (id) {
   $(id).onchange = function () {
     D.nome = $("aNome").value.trim();
@@ -154,6 +209,21 @@ function aplicarTema() {
   else delete document.documentElement.dataset.tema;
   if (N && N.tema) N.tema(CFG.tema === "claro");
 }
+window.gaiaBipe = function () {
+  if (!window.AudioContext && !window.webkitAudioContext) return;
+  var context = window.__gaiaAudio || (window.__gaiaAudio = new (window.AudioContext || window.webkitAudioContext)());
+  if (context.state === "suspended") context.resume();
+  var oscillator = context.createOscillator();
+  var gain = context.createGain();
+  oscillator.frequency.value = 660;
+  gain.gain.setValueAtTime(0.0001, context.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.08, context.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.08);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start();
+  oscillator.stop(context.currentTime + 0.09);
+};
 var novaSala = function () {
   return {
     id: novoId("s"),
@@ -510,49 +580,3 @@ $("btExemplo").onclick = function () {
 };
 
 // ═════ CONTAS E PERFIS (login local) ═════
-// ═════ PLANILHA EXCEL/SHEETJS ═════
-(function () {
-  var chatUrl = window.GAIA_API_URL || "http://localhost:3000/api/chat";
-  var apiBase = chatUrl.replace(/\/chat$/, "");
-
-  function atualizarStatusPlanilha() {
-    var caixa = $("statusPlanilha");
-    fetch(apiBase + "/planilha/status")
-      .then(function (response) { return response.json(); })
-      .then(function (result) {
-        var d = result.data || {};
-        var c = d.counts || {};
-        if (caixa) caixa.textContent = d.source
-          ? d.source + " · " + (c.horarios || 0) + " horários · " + (c.salas || 0) + " salas · " + (c.cursos || 0) + " cursos"
-          : "Nenhuma planilha carregada.";
-      })
-      .catch(function () { if (caixa) caixa.textContent = "API de planilhas indisponível."; });
-  }
-
-  var botaoEnviar = $("btEnviarPlanilha");
-  if (botaoEnviar) botaoEnviar.onclick = function () {
-    var arquivo = $("arqPlanilha") && $("arqPlanilha").files[0];
-    if (!arquivo) { toast("Selecione uma planilha"); return; }
-    var form = new FormData();
-    form.append("arquivo", arquivo);
-    botaoEnviar.disabled = true;
-    fetch(apiBase + "/planilha/upload", { method: "POST", body: form })
-      .then(function (response) { return response.json().then(function (body) { if (!response.ok) throw new Error(body.error || "Falha no upload"); return body; }); })
-      .then(function (result) {
-        var c = (result.data && result.data.counts) || {};
-        $("statusPlanilha").textContent = "Atualizado: " + (c.horarios || 0) + " horários, " + (c.salas || 0) + " salas e " + (c.cursos || 0) + " cursos.";
-        toast("Planilha atualizada");
-      })
-      .catch(function (error) { $("statusPlanilha").textContent = error.message; })
-      .finally(function () { botaoEnviar.disabled = false; });
-  };
-
-  var botaoStatus = $("btStatusPlanilha");
-  if (botaoStatus) botaoStatus.onclick = atualizarStatusPlanilha;
-  atualizarStatusPlanilha();
-
-  if (typeof EventSource !== "undefined") {
-    var eventos = new EventSource(apiBase + "/planilha/eventos");
-    eventos.onmessage = atualizarStatusPlanilha;
-  }
-})();

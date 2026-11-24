@@ -247,8 +247,9 @@ function estado(s) {
 }
 
 // ═════ NAVEGAÇÃO (as abas mudam com o perfil) ═════
-var telaAtual = "tGaia";
+var telaAtual = "tInicio";
 var ICN = {
+  inicio: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
   gaia: '<circle cx="12" cy="12" r="4"/><ellipse cx="12" cy="12" rx="10" ry="4.5"/>',
   mapa: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/>',
   hor: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -260,28 +261,12 @@ var ICN = {
   aj: '<path d="m9.7 3 .5-1h3.6l.5 1 1.5.7 1.1-.4 2.5 2.5-.4 1.1.7 1.5 1 .5v3.6l-1 .5-.7 1.5.4 1.1-2.5 2.5-1.1-.4-1.5.7-.5 1h-3.6l-.5-1-1.5-.7-1.1.4-2.5-2.5.4-1.1-.7-1.5-1-.5V8.9l1-.5.7-1.5-.4-1.1 2.5-2.5 1.1.4L9.7 3Z"/><circle cx="12" cy="10.7" r="2.7"/>',
 };
 function abasDoPerfil() {
-  var p = perfil();
-  if (p === "professor")
-    return [
-      ["tGaia", "G.A.I.A", "gaia"],
-      ["tMapa", "Mapa", "mapa"],
-      ["tHorarios", "Aulas", "hor"],
-      ["tAgenda", "Agenda", "agenda"],
-      ["tAjustes", "Configurações", "aj"],
-    ];
-  if (p === "empresa" || p === "visitante")
-    return [
-      ["tGaia", "G.A.I.A", "gaia"],
-      ["tMapa", "Mapa", "mapa"],
-      ["tCursos", "Cursos", "cursos"],
-      ["tUnidade", "Unidade", "unid"],
-      ["tAjustes", "Configurações", "aj"],
-    ];
   return [
-    ["tGaia", "G.A.I.A", "gaia"],
+    ["tInicio", "Início", "inicio"],
+    ["tGaia", "GAIA", "gaia"],
     ["tMapa", "Mapa", "mapa"],
-    ["tHorarios", "Horários", "hor"],
-    ["tAgenda", "Agenda", "agenda"],
+    ["tCursos", "Cursos", "cursos"],
+    ["tUnidade", "Unidade", "unid"],
     ["tAjustes", "Configurações", "aj"],
   ];
 }
@@ -330,7 +315,69 @@ function irPara(t) {
   if (t === "tAgenda") renderAgenda();
   if (t === "tCursos") renderCursos();
   if (t === "tUnidade") renderUnidade();
+  if (t === "tInicio") renderInicio();
 }
+function renderInicio() {
+  renderAvisosInstitucionais();
+}
+function renderAvisosInstitucionais() {
+  var cx = $("listaAvisosInstitucionais");
+  if (!cx) return;
+
+  function montarAvisos(avisos) {
+    if (!avisos.length) {
+      cx.innerHTML =
+        '<article class="inicio-aviso">' +
+        '<span class="inicio-aviso-icone" aria-hidden="true">ⓘ</span>' +
+        '<span><b>A unidade está com os avisos em atualização</b>' +
+        '<small>Confira a agenda institucional para informações sobre horários, eventos e comunicados.</small></span>' +
+        '</article>';
+      return;
+    }
+
+    cx.innerHTML = avisos
+      .map(function (aviso) {
+        return (
+          '<article class="inicio-aviso">' +
+          '<span class="inicio-aviso-icone" aria-hidden="true">ⓘ</span>' +
+          '<span><b>' + esc(aviso.titulo || "Aviso institucional") + '</b>' +
+          '<small>' + esc(aviso.descricao || "Novo comunicado da unidade.") + '</small></span>' +
+          '</article>'
+        );
+      })
+      .join("");
+  }
+
+  var avisosLocais = ((D && D.agenda) || []).filter(function (evento) {
+    return evento.tipo === "aviso";
+  });
+  montarAvisos(avisosLocais);
+
+  // Em produção, defina window.GAIA_AVISOS_URL com a API que retorna
+  // objetos { titulo, descricao, data }. O aviso local permanece como fallback.
+  if (window.GAIA_AVISOS_URL) {
+    fetch(window.GAIA_AVISOS_URL)
+      .then(function (resposta) {
+        if (!resposta.ok) throw new Error("Falha ao carregar avisos");
+        return resposta.json();
+      })
+      .then(function (dados) {
+        var avisos = Array.isArray(dados) ? dados : dados.avisos;
+        if (Array.isArray(avisos)) montarAvisos(avisos);
+      })
+      .catch(function () {
+        montarAvisos(avisosLocais);
+      });
+  }
+}
+document.querySelectorAll("[data-inicio]").forEach(function (botao) {
+  botao.onclick = function () {
+    irPara(botao.dataset.inicio);
+  };
+});
+$("btInicioAjustes").onclick = function () {
+  irPara("tAjustes");
+};
 // botão voltar do Android: fecha a folha, sai do modo marcar, volta para o início; senão, deixa o app fechar
 window.gaiaVoltar = function () {
   if ($("folha").classList.contains("on")) {
@@ -342,8 +389,8 @@ window.gaiaVoltar = function () {
     return true;
   }
   if ($("tLogin").classList.contains("on")) return false;
-  if (telaAtual !== "tGaia") {
-    irPara("tGaia");
+  if (telaAtual !== "tInicio") {
+    irPara("tInicio");
     return true;
   }
   return false;
@@ -481,7 +528,53 @@ function renderSugestoes() {
 // ═════ CONVERSA ═════
 var HIST = [],
   pedidoN = 0,
-  pendentes = {};
+  pendentes = {},
+  chatRequestController = null,
+  chatRequestTimeout = null,
+  chatRequestId = null,
+  chatRequestBusy = false;
+
+function definirEstadoEnvio(pendente) {
+  chatRequestBusy = !!pendente;
+  var botao = $("btEnviar");
+  botao.classList.toggle("interrompendo", chatRequestBusy);
+  botao.textContent = chatRequestBusy ? "■" : "➤";
+  botao.setAttribute(
+    "aria-label",
+    chatRequestBusy ? "Interromper resposta" : "Enviar mensagem",
+  );
+  botao.setAttribute("aria-pressed", chatRequestBusy ? "true" : "false");
+  $("entrada").removeAttribute("disabled");
+  $("entrada").setAttribute("aria-busy", chatRequestBusy ? "true" : "false");
+}
+
+function limparRequisicaoChat() {
+  if (chatRequestTimeout) {
+    clearTimeout(chatRequestTimeout);
+    chatRequestTimeout = null;
+  }
+  chatRequestController = null;
+  chatRequestId = null;
+  definirEstadoEnvio(false);
+  estado("pronto");
+}
+
+function interromperResposta() {
+  var id = chatRequestId;
+  var pedido = id ? pendentes[id] : null;
+
+  if (pedido) {
+    pedido.cancelado = true;
+    pedido.dg.remove();
+    delete pendentes[id];
+  }
+  if (chatRequestController) chatRequestController.abort();
+  if (HIST.length && HIST[HIST.length - 1].role === "user") HIST.pop();
+
+  limparRequisicaoChat();
+  toast("Resposta interrompida");
+  $("entrada").focus();
+}
 function addMsg(quem, texto, extra) {
   $("palco").classList.add("mini");
   var d = document.createElement("div");
@@ -519,9 +612,7 @@ function digitando() {
 }
 function enviar(txt) {
   txt = String(txt || "").trim();
-  if (!txt || $("entrada").disabled) return;
-  $("entrada").disabled = true;
-  $("btEnviar").disabled = true;
+  if (!txt || chatRequestBusy) return;
   $("entrada").value = "";
   addMsg("eu", txt);
   if (N && N.pararFala) N.pararFala();
@@ -703,20 +794,35 @@ function perguntarIA(txt) {
   estado("pensando");
   var dg = digitando(),
     id = "p" + ++pedidoN;
-  pendentes[id] = { dg: dg, txt: txt };
+  var controller = new AbortController();
+  chatRequestController = controller;
+  chatRequestId = id;
+  pendentes[id] = { dg: dg, txt: txt, controller: controller };
+  definirEstadoEnvio(true);
+
+  chatRequestTimeout = setTimeout(function () {
+    var pedido = pendentes[id];
+    if (!pedido) return;
+    pedido.timeout = true;
+    controller.abort();
+  }, 30000);
+
   fetch(window.GAIA_API_URL || "http://localhost:3000/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message: txt }),
+    signal: controller.signal,
   })
     .then(function (response) {
-    return response.json().then(function (payload) {
-      if (!response.ok) {
-        throw new Error(payload.error || "HTTP " + response.status);
-      }
-      return payload;
-    });
-  })
+      return response.json().catch(function () {
+        throw new Error("O servidor retornou uma resposta inválida.");
+      }).then(function (payload) {
+        if (!response.ok) {
+          throw new Error(payload.error || "HTTP " + response.status);
+        }
+        return payload;
+      });
+    })
     .then(function (payload) {
       if (!payload.success) throw new Error(payload.error || "Resposta inválida");
       window.gaiaResposta(id, JSON.stringify({
@@ -726,7 +832,14 @@ function perguntarIA(txt) {
       }));
     })
     .catch(function (error) {
-      window.gaiaResposta(id, JSON.stringify({ ok: false, erro: error.message }));
+      var pedido = pendentes[id];
+      if (pedido && pedido.cancelado) return;
+      var mensagem = pedido && pedido.timeout
+        ? "tempo limite ao buscar resposta"
+        : error && error.name === "AbortError"
+          ? "requisição interrompida"
+          : error.message || "falha ao buscar resposta";
+      window.gaiaResposta(id, JSON.stringify({ ok: false, erro: mensagem }));
     });
 }
 window.gaiaResposta = function (id, js) {
@@ -734,8 +847,7 @@ window.gaiaResposta = function (id, js) {
   if (!p) return;
   delete pendentes[id];
   p.dg.remove();
-  $("entrada").disabled = false;
-  $("btEnviar").disabled = false;
+  limparRequisicaoChat();
   var r;
   try {
     r = JSON.parse(js);
@@ -1213,6 +1325,10 @@ window.gaiaVozErro = function (m) {
   if (m) toast(m);
 };
 $("btEnviar").onclick = function () {
+  if (chatRequestBusy) {
+    interromperResposta();
+    return;
+  }
   enviar($("entrada").value);
 };
 $("entrada").addEventListener("keydown", function (e) {

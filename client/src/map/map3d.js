@@ -98,6 +98,9 @@ function cor3() {
     lajeLado: claro ? "#c8d6d3" : "#0a1a22",
     sombra: claro ? "rgba(30,60,60,.16)" : "rgba(0,0,0,.35)",
     azul: claro ? "#1a73e8" : "#4da3ff",
+    dest: "#ffb547",
+    rota: claro ? "#d50f1c" : "#ff6b78",
+    rotaHalo: claro ? "rgba(213,15,28,.22)" : "rgba(255,107,120,.26)",
   };
   return COR3;
 }
@@ -607,7 +610,7 @@ passos = function (de, para) {
 };
 
 // ── desenho ──
-function desenhar3D() {
+function desenhar3DAntigo() {
   var c = $("mapa3d");
   if (!c || c.style.display === "none") return;
   DPR3 = Math.min(2, window.devicePixelRatio || 1);
@@ -1148,6 +1151,433 @@ function desenhar3D() {
   if (agulha)
     agulha.style.transform = "rotate(" + (M3.yaw + NORTE3) + "rad)";
 }
+// ═════ VERSÃO ILUSTRAÇÃO 2.1 ═════
+// A cena fixa é desenhada uma vez em cache. Rotas, marcadores e nomes continuam
+// separados para preservar a navegação existente do G.A.I.A.
+function cenaMaqueteNova(ctx, k, r3) {
+  var c = ctx.canvas,
+    C = cena3(),
+    R = D.rede,
+    todos = M3.foco === "todos",
+    rotulos = [];
+  ctx.fillStyle = k.fundo;
+  ctx.fillRect(0, 0, c.width, c.height);
+  M3.hit = [];
+
+  var lista = todos ? andares3() : [+M3.foco],
+    naRota = {};
+  r3.forEach(function (p) {
+    if (p.s) naRota[p.s] = 1;
+  });
+
+  if (!todos && +M3.foco !== 0) {
+    ctx.globalAlpha = +M3.foco < 0 ? 0.16 : 0.28;
+    var zf = +M3.foco > 0 ? -70 : 0;
+    if (C.terreno) chao3(ctx, C.terreno, zf, null, k.tx3, 1);
+    D.salas.forEach(function (s) {
+      if (s.r && (+s.andar || 0) === 0)
+        chao3(ctx, retPts(s.r), zf, null, k.tx3, 0.6);
+    });
+    ctx.setLineDash([5 * DPR3, 5 * DPR3]);
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+
+  lista.forEach(function (a) {
+    var z = z3(a),
+      ativo = andarVisivel(a),
+      salas = D.salas.filter(function (s) {
+        return (+s.andar || 0) === a;
+      });
+    ctx.globalAlpha =
+      todos &&
+      r3.length > 1 &&
+      !r3.some(function (p) {
+        return p.a === a;
+      })
+        ? 0.3
+        : 1;
+
+    if (a === 0) {
+      chaoTerreo3(ctx, k, z, todos);
+    } else if (C.lajes && C.lajes[a]) {
+      C.lajes[a].forEach(function (l) {
+        caixa3(
+          ctx,
+          [l[0] - 4, l[1] - 4, l[2] + 8, l[3] + 8],
+          z - 10,
+          z,
+          k.il.circ,
+          k.lajeLado,
+          mix3(k.lajeLado, "#000", 0.15),
+          null,
+          0,
+        );
+      });
+      if (M3.s > 0.5)
+        C.lajes[a].forEach(function (l) {
+          ctx.strokeStyle = k.il.circLinha;
+          ctx.lineWidth = 0.8 * DPR3;
+          ctx.beginPath();
+          for (var x = l[0] + 20; x < l[0] + l[2]; x += 20) {
+            var p = P3(x, l[1], z + 0.2),
+              q = P3(x, l[1] + l[3], z + 0.2);
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(q.x, q.y);
+          }
+          for (var y = l[1] + 20; y < l[1] + l[3]; y += 20) {
+            p = P3(l[0], y, z + 0.2);
+            q = P3(l[0] + l[2], y, z + 0.2);
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(q.x, q.y);
+          }
+          ctx.stroke();
+        });
+      if (a === 1)
+        (C.vazios || []).forEach(function (v) {
+          ctx.setLineDash([5 * DPR3, 4 * DPR3]);
+          chao3(
+            ctx,
+            retPts(v),
+            z + 0.5,
+            k.claro ? "rgba(255,255,255,.35)" : "rgba(0,0,0,.25)",
+            k.tx3,
+            0.8,
+          );
+          ctx.setLineDash([]);
+        });
+    }
+
+    if (R)
+      R.arestas.forEach(function (e) {
+        var A = R.nos[e[0]],
+          B = R.nos[e[1]];
+        if (!A || !B || andarNo(e[0]) !== a || andarNo(e[1]) !== a) return;
+        if (A[0] === B[0] && A[1] === B[1]) return;
+        var dx = B[0] - A[0],
+          dy = B[1] - A[1],
+          L = Math.hypot(dx, dy) || 1,
+          ox = (-dy / L) * 9,
+          oy = (dx / L) * 9;
+        chao3(
+          ctx,
+          [
+            [A[0] + ox - (dx / L) * 9, A[1] + oy - (dy / L) * 9],
+            [B[0] + ox + (dx / L) * 9, B[1] + oy + (dy / L) * 9],
+            [B[0] - ox + (dx / L) * 9, B[1] - oy + (dy / L) * 9],
+            [A[0] - ox - (dx / L) * 9, A[1] - oy - (dy / L) * 9],
+          ],
+          z + 0.8,
+          k.il.circ,
+          null,
+        );
+      });
+
+    var objs = [];
+    salas.forEach(function (s) {
+      if (s.r)
+        objs.push({
+          t: "sala",
+          s: s,
+          d: proj3(s.r[0] + s.r[2] / 2, s.r[1] + s.r[3] / 2, z).d,
+        });
+    });
+    (C.escadas || []).forEach(function (e) {
+      if (e.andares.indexOf(a) >= 0)
+        objs.push({
+          t: "esc",
+          e: e,
+          d: proj3(e.r[0] + e.r[2] / 2, e.r[1] + e.r[3] / 2, z).d + 0.1,
+        });
+    });
+    if (a === 0) {
+      (C.decor || []).forEach(function (o) {
+        objs.push({
+          t: "dec",
+          o: o,
+          d: proj3(
+            o.x != null ? o.x : o.r[0],
+            o.y != null ? o.y : o.r[1],
+            z,
+          ).d,
+        });
+      });
+      (C.arvores || []).forEach(function (q) {
+        objs.push({ t: "arv", q: q, d: proj3(q[0], q[1], z).d });
+      });
+    }
+    objs.sort(function (p, q) {
+      return p.d - q.d;
+    });
+
+    objs.forEach(function (o) {
+      if (o.t === "sala") {
+        var s = o.s,
+          dest = s.id === DESTINO,
+          orig = s.id === CFG.de;
+        if (s.id === "quadra") {
+          var cr = dest ? k.dest : orig ? k.azul : null;
+          s.__topo = retPts(s.r).map(function (q) {
+            return P3(q[0], q[1], z + 1);
+          });
+          s.__h = 6;
+          if (cr)
+            chao3(ctx, retPts(s.r), z + 0.7, null, cr, 2.6);
+        } else if (s.r) {
+          s.__topo = salaMaquete(ctx, k, s, z, { dest: dest, orig: orig });
+          s.__h = PAR3.H;
+        }
+        if (ativo) M3.hit.push({ id: s.id, poli: s.__topo, d: o.d });
+      } else if (o.t === "esc") {
+        var e = o.e,
+          el = e.tipo === "elevador",
+          usa = r3.some(function (p) {
+            return p.k && p.k.indexOf(e.id) === 0;
+          });
+        escadaMaquete(ctx, k, e, z, usa);
+        if (ativo) {
+          var cc = P3(
+            e.r[0] + e.r[2] / 2,
+            e.r[1] + e.r[3] / 2,
+            z + (el ? PAR3.H * 1.6 : 12),
+          );
+          rotulos.push({
+            ic: el ? "🛗" : "",
+            vet: el ? "" : "esc",
+            tx: "",
+            x: cc.x,
+            y: cc.y,
+            pri: usa ? 8 : 3,
+            cor: usa ? k.rota : k.tx2,
+            peq: true,
+          });
+        }
+      } else if (o.t === "arv") {
+        arvoreMaquete(ctx, k, o.q, z);
+      } else if (o.t === "dec") {
+        var d = o.o;
+        if (d.t === "caixa") {
+          var n = 14,
+            top = [],
+            bot = [];
+          for (var i2 = 0; i2 < n; i2++) {
+            var an2 = (i2 / n) * Math.PI * 2;
+            top.push(
+              P3(
+                d.x + Math.cos(an2) * d.raio,
+                d.y + Math.sin(an2) * d.raio,
+                z + d.alt,
+              ),
+            );
+            bot.push(
+              P3(
+                d.x + Math.cos(an2) * d.raio,
+                d.y + Math.sin(an2) * d.raio,
+                z,
+              ),
+            );
+          }
+          for (var i3 = 0; i3 < n; i3++) {
+            var j3 = (i3 + 1) % n;
+            poli3(
+              ctx,
+              [bot[i3], bot[j3], top[j3], top[i3]],
+              mix3(
+                k.claro ? "#d7dde2" : "#4a5560",
+                "#000",
+                0.12 * Math.abs(Math.cos((i3 / n) * Math.PI * 2 + M3.yaw)),
+              ),
+              null,
+            );
+          }
+          poli3(
+            ctx,
+            top,
+            k.claro ? "#eef2f5" : "#5d6873",
+            k.tx3,
+            0.8,
+          );
+          if (ativo)
+            rotulos.push({
+              tx: "Caixa d'agua",
+              x: top[0].x - (top[0].x - top[7].x) / 2,
+              y: (top[3].y + top[10].y) / 2,
+              pri: 1,
+              cor: k.tx3,
+              peq: true,
+            });
+        } else if (d.t === "mastros") {
+          for (var i4 = -1; i4 <= 1; i4++) {
+            var b1 = P3(d.x + i4 * 14, d.y, z),
+              t1 = P3(d.x + i4 * 14, d.y, z + 70);
+            ctx.strokeStyle = k.claro ? "#7d8790" : k.tx3;
+            ctx.lineWidth = 1.5 * DPR3;
+            ctx.beginPath();
+            ctx.moveTo(b1.x, b1.y);
+            ctx.lineTo(t1.x, t1.y);
+            ctx.stroke();
+            ctx.fillStyle = ["#2e9e4f", "#d50f1c", "#3d7fd9"][i4 + 1];
+            ctx.fillRect(
+              t1.x,
+              t1.y,
+              9 * DPR3 * Math.max(0.6, M3.s),
+              6 * DPR3 * Math.max(0.6, M3.s),
+            );
+          }
+        } else if (d.t === "arquibancada") {
+          var aq = k.il.m.arq,
+            hor = d.r[2] > d.r[3];
+          for (var i5 = 0; i5 < 4; i5++) {
+            var rr = hor
+              ? [d.r[0], d.r[1] + (i5 * d.r[3]) / 4, d.r[2], d.r[3] / 4]
+              : [
+                  d.r[0] + (i5 * d.r[2]) / 4,
+                  d.r[1],
+                  d.r[2] / 4,
+                  d.r[3],
+                ];
+            caixa3(
+              ctx,
+              rr,
+              z,
+              z + 4 + i5 * 4,
+              i5 % 2 ? aq[0] : mix3(aq[0], "#fff", 0.25),
+              aq[1],
+              aq[2],
+              null,
+              0,
+            );
+          }
+        }
+      }
+    });
+
+    salas.forEach(function (s) {
+      if (s.r) return;
+      var p = P3(s.x, s.y, z);
+      if (ativo) {
+        M3.hit.push({ id: s.id, pt: p, d: proj3(s.x, s.y, z).d + 5 });
+        rotulos.push({
+          ic: s.ic || "📍",
+          tx: rotuloCurto(s.nome),
+          x: p.x,
+          y: p.y,
+          pri: s.id === DESTINO ? 10 : s.tipo === "acesso" ? 6 : 4,
+          cor: k.tx,
+          pino: true,
+          id: s.id,
+        });
+      }
+    });
+
+    if (ativo)
+      salas.forEach(function (s) {
+        if (!s.r || !s.__topo) return;
+        var tp = s.__topo,
+          cx = (tp[0].x + tp[1].x + tp[2].x + tp[3].x) / 4,
+          cy = (tp[0].y + tp[1].y + tp[2].y + tp[3].y) / 4,
+          larg = Math.max(
+            Math.hypot(tp[0].x - tp[1].x, tp[0].y - tp[1].y),
+            Math.hypot(tp[1].x - tp[2].x, tp[1].y - tp[2].y),
+          ),
+          esp = s.id === DESTINO || s.id === CFG.de;
+        if (esp && r3.length > 1 && (s.id === DESTINO || !M3.nav)) return;
+        rotulos.push({
+          ic: s.ic || "",
+          tx: rotuloCurto(s.nome),
+          x: cx,
+          y: cy,
+          larg: larg,
+          pri: esp
+            ? 9
+            : naRota[s.id]
+              ? 7
+              : s.ic
+                ? 5
+                : 2 + Math.min(2, (s.r[2] * s.r[3]) / 20000),
+          cor: k.tx,
+          id: s.id,
+          fixo: esp,
+        });
+      });
+
+    ctx.globalAlpha = 1;
+  });
+
+  if (lista.indexOf(0) >= 0)
+    (D.ruas || []).forEach(function (rr) {
+      var p = P3(rr.x, rr.y, z3(0));
+      rotulos.push({
+        tx: rr.t,
+        x: p.x,
+        y: p.y,
+        pri: 0.5,
+        cor: k.ruaTx,
+        rua: true,
+      });
+    });
+  return rotulos;
+}
+
+function desenhar3D() {
+  var c = $("mapa3d");
+  if (!c || c.style.display === "none") return;
+  DPR3 = Math.min(2, window.devicePixelRatio || 1);
+  var W = c.clientWidth,
+    H = c.clientHeight;
+  if (!W || !H) return;
+  if (c.width !== Math.round(W * DPR3) || c.height !== Math.round(H * DPR3)) {
+    c.width = Math.round(W * DPR3);
+    c.height = Math.round(H * DPR3);
+  }
+
+  var ctx = c.getContext("2d"),
+    k = cor3(),
+    r3 = rota3m(),
+    passo = M3.nav ? M3.nav.passos[M3.nav.i] : null,
+    chave = [
+      c.width,
+      c.height,
+      M3.yaw.toFixed(4),
+      M3.pitch.toFixed(4),
+      M3.s.toFixed(4),
+      M3.px.toFixed(1),
+      M3.py.toFixed(1),
+      M3.foco,
+      DESTINO,
+      CFG.de,
+      COR3k,
+      CFG.textoEscala,
+      r3.length,
+    ].join("|");
+
+  if (!M3.cache) M3.cache = document.createElement("canvas");
+  var cc = M3.cache;
+  if (cc.width !== c.width || cc.height !== c.height) {
+    cc.width = c.width;
+    cc.height = c.height;
+    M3.cacheK = "";
+  }
+  if (M3.cacheK !== chave) {
+    var g = cc.getContext("2d");
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalAlpha = 1;
+    M3.rotBase = cenaMaqueteNova(g, k, r3);
+    M3.cacheK = chave;
+  }
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.drawImage(cc, 0, 0);
+  var rotulos = M3.rotBase ? M3.rotBase.slice() : [];
+  if (r3.length > 1) desenharRota3(ctx, r3, passo, k, rotulos);
+  colocarRotulos(ctx, rotulos, k);
+  var bn = $("bt3DNorte");
+  var agulha = bn && bn.querySelector(".agulha");
+  if (agulha)
+    agulha.style.transform = "rotate(" + (M3.yaw + NORTE3) + "rad)";
+}
+
 function desenharRota3(ctx, r3, passo, k, rotulos) {
   var todos = M3.foco === "todos",
     segs = [],
@@ -2166,6 +2596,7 @@ function mostrarPasso(i) {
           ? " " + p.sub.replace(/^\S+ (?=[A-ZÁÉÍÓÚ])/, "")
           : ""),
     );
+  if (CFG.som && window.gaiaBipe) window.gaiaBipe();
 }
 $("nvAnt").onclick = function () {
   mostrarPasso(M3.nav.i - 1);

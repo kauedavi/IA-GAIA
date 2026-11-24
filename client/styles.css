@@ -486,6 +486,252 @@ nav button.on svg {
   filter: none
 }
 
+.inicio-tela {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  position: relative;
+}
+
+.inicio-titulo-menu {
+  max-width: 820px;
+  height: 64px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  font-size: 20px;
+  font-weight: 800;
+  padding-right: 56px;
+}
+
+.inicio-ajustes {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--linha);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--tx);
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  line-height: 1;
+  box-shadow: var(--sombra);
+  z-index: 2;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease);
+}
+
+.inicio-ajustes:hover {
+  transform: rotate(8deg) scale(1.04);
+  border-color: var(--pri);
+  background: var(--card2);
+}
+
+.inicio-boas-vindas {
+  max-width: 820px;
+  margin: 18px auto 18px;
+  padding-right: 56px;
+  animation: inicioEntrar var(--motion-slow) var(--motion-ease) both;
+}
+
+.inicio-marca {
+  display: inline-block;
+  color: var(--pri);
+  font-size: clamp(38px, 10vw, 56px);
+  font-weight: 800;
+  letter-spacing: .18em;
+  margin-bottom: 6px;
+}
+
+.inicio-boas-vindas h1 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--tx2);
+}
+
+.inicio-destaques,
+.inicio-grade {
+  max-width: 820px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.inicio-destaques {
+  margin-bottom: 24px;
+  grid-template-columns: 1fr;
+}
+
+.inicio-imagem-card {
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--r);
+  background: transparent;
+  line-height: 0;
+  box-shadow: none;
+  transition:
+    transform var(--motion-normal) var(--motion-ease),
+    filter var(--motion-normal) var(--motion-ease);
+}
+
+.inicio-imagem-card:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.06) brightness(1.03);
+}
+
+.inicio-imagem-card:focus-visible,
+.inicio-card:focus-visible,
+.inicio-ajustes:focus-visible {
+  outline: 3px solid var(--pri);
+  outline-offset: 3px;
+}
+
+.inicio-imagem-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2.25;
+  object-fit: cover;
+}
+
+.inicio-secao {
+  max-width: 820px;
+  margin: 0 auto 24px;
+  animation: inicioEntrar var(--motion-slow) var(--motion-ease) both;
+}
+
+.inicio-secao h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.inicio-avisos {
+  display: grid;
+  gap: 10px;
+}
+
+.inicio-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 88px;
+  border: 1px solid var(--linha);
+  border-radius: var(--r);
+  background: var(--card);
+  padding: 14px 16px;
+  transition:
+    transform var(--motion-normal) var(--motion-ease),
+    border-color var(--motion-normal) var(--motion-ease),
+    background var(--motion-normal) var(--motion-ease);
+}
+
+.inicio-aviso:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--pri) 45%, var(--linha));
+}
+
+.inicio-aviso-icone {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pri) 12%, var(--card));
+  color: var(--pri);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  font-size: 20px;
+}
+
+.inicio-aviso b,
+.inicio-aviso small {
+  display: block;
+}
+
+.inicio-aviso b {
+  margin-bottom: 4px;
+  font-size: 16px;
+}
+
+.inicio-aviso small {
+  color: var(--tx2);
+  line-height: 1.45;
+}
+
+.inicio-card {
+  min-height: 112px;
+  border: 1px solid var(--linha);
+  border-radius: var(--r);
+  background: var(--card);
+  color: var(--tx);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  text-align: left;
+  transition:
+    transform var(--motion-normal) var(--motion-ease),
+    border-color var(--motion-normal) var(--motion-ease),
+    background var(--motion-normal) var(--motion-ease);
+}
+
+.inicio-card:hover {
+  border-color: var(--pri);
+  background: var(--card2);
+  transform: translateY(-2px);
+}
+
+@keyframes inicioEntrar {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.inicio-card-icone {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--pri) 12%, var(--card));
+  color: var(--pri);
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  flex: 0 0 auto;
+}
+
+.inicio-card b,
+.inicio-card small {
+  display: block;
+}
+
+.inicio-card b {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.inicio-card small {
+  color: var(--tx2);
+  line-height: 1.35;
+}
+
+@media (max-width: 520px) {
+  .inicio-destaques {
+    grid-template-columns: 1fr;
+  }
+
+  .inicio-grade {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* cartões e listas */
 .card {
   background: var(--card);
@@ -1212,6 +1458,14 @@ nav button.on svg {
   opacity: 0.55;
 }
 
+.send-button.interrompendo {
+  background: #ef5960;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 1;
+}
+
 .voice-button.gravando {
   background: #ef5960;
   color: #fff;
@@ -1935,6 +2189,40 @@ nav button.on svg {
   justify-content: space-between;
   align-items: center;
   padding: 6px 0
+}
+
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--linha);
+  border-radius: 12px;
+  background: var(--card2)
+}
+
+.seg button {
+  min-height: 40px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  color: var(--tx2);
+  background: transparent;
+  border: 0;
+  font-weight: 600
+}
+
+.seg button.on,
+.seg button[aria-checked="true"] {
+  background: var(--pri);
+  color: #fff
+}
+
+.seg.largo {
+  display: flex;
+  width: 100%
+}
+
+.seg.largo button {
+  flex: 1
 }
 
 .sw {
@@ -2875,6 +3163,80 @@ textarea:focus-visible {
   margin-top: 4px;
 }
 
+#tAjustes .acessibilidade-secao {
+  gap: 16px;
+}
+
+:root[data-contraste="alto"] {
+  --bg: #000;
+  --bg2: #000;
+  --card: #000;
+  --card2: #111;
+  --linha: #fff;
+  --tx: #fff;
+  --tx2: #fff;
+  --tx3: #e6e6e6;
+  --pri: #ffd400;
+  --pri2: #ffd400;
+}
+
+:root[data-contraste="alto"][data-tema="claro"] {
+  --bg: #fff;
+  --bg2: #fff;
+  --card: #fff;
+  --card2: #f2f2f2;
+  --linha: #000;
+  --tx: #000;
+  --tx2: #000;
+  --tx3: #1a1a1a;
+  --pri: #003d99;
+  --pri2: #003d99;
+}
+
+html {
+  font-size: calc(16px * var(--escala, 1));
+}
+
+:root[data-movimento="reduzido"] *,
+:root[data-movimento="reduzido"] *::before,
+:root[data-movimento="reduzido"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+:root[data-contraste="alto"] #tAjustes.on {
+  --bg: #000;
+  --bg2: #000;
+  --card: #000;
+  --card2: #111;
+  --linha: #fff;
+  --tx: #fff;
+  --tx2: #fff;
+  --tx3: #e6e6e6;
+  --pri: #ffd400;
+  --pri2: #ffd400;
+}
+
+:root[data-contraste="alto"][data-tema="claro"] #tAjustes.on {
+  --bg: #fff;
+  --bg2: #fff;
+  --card: #fff;
+  --card2: #f2f2f2;
+  --linha: #000;
+  --tx: #000;
+  --tx2: #000;
+  --tx3: #1a1a1a;
+  --pri: #003d99;
+  --pri2: #003d99;
+}
+
+:root[data-contraste="alto"] #tAjustes .topo,
+:root[data-contraste="alto"] #tAjustes .card,
+:root[data-contraste="alto"] #tAjustes input,
+:root[data-contraste="alto"] #tAjustes select {
+  border-color: var(--linha);
+}
+
 #tAjustes #ajEdicao,
 #tAjustes #ajDados,
 #tAjustes #btSair {
@@ -3156,4 +3518,45 @@ textarea:focus-visible {
 :root:not([data-tema="claro"]) .mapa-tela .mapa-iniciar,
 :root:not([data-tema="claro"]) .mapa-tela #nav3d button {
   background: var(--mapa-pri);
+}
+
+/* O tema interno define variáveis próprias; reaplica o alto contraste depois dele. */
+:root[data-contraste="alto"] #tAjustes.on {
+  --bg: #000;
+  --bg2: #000;
+  --card: #000;
+  --card2: #111;
+  --linha: #fff;
+  --tx: #fff;
+  --tx2: #fff;
+  --tx3: #e6e6e6;
+  --pri: #ffd400;
+  --pri2: #ffd400;
+}
+
+:root[data-contraste="alto"][data-tema="claro"] #tAjustes.on {
+  --bg: #fff;
+  --bg2: #fff;
+  --card: #fff;
+  --card2: #f2f2f2;
+  --linha: #000;
+  --tx: #000;
+  --tx2: #000;
+  --tx3: #1a1a1a;
+  --pri: #003d99;
+  --pri2: #003d99;
+}
+
+:root[data-contraste="alto"] #tAjustes .topo,
+:root[data-contraste="alto"] #tAjustes .card,
+:root[data-contraste="alto"] #tAjustes input,
+:root[data-contraste="alto"] #tAjustes select {
+  background: var(--card);
+  border-color: var(--linha);
+  color: var(--tx);
+}
+
+:root[data-contraste="alto"] #tAjustes .seg button.on,
+:root[data-contraste="alto"] #tAjustes .seg button[aria-checked="true"] {
+  color: #000;
 }

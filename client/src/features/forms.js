@@ -98,7 +98,7 @@ function renderAjustes() {
       };
     });
   $("versao").textContent =
-    "G.A.I.A — Hub de Apoio a Rotas e Informações" +
+    "G.A.I.A — seu guia no SENAI Anchieta" +
     (N && N.versao ? " · v" + N.versao() : "");
   var c = conta(),
     pf = perfil();

@@ -7,7 +7,8 @@ import { fallbackSalas } from "../data/fallbackSalas.js";
 
 const MAX_SCHEDULE_CACHE_ENTRIES = 128;
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const defaultPath = path.resolve(currentDir, "../../data/gaia.xlsx");
+// O README e o .env.example indicam server/src/data/gaia.xlsx; antes o código procurava em server/data/gaia.xlsx.
+const defaultPath = path.resolve(currentDir, "../data/gaia.xlsx");
 
 let spreadsheetPath = process.env.GAIA_SPREADSHEET_PATH
   ? path.resolve(process.env.GAIA_SPREADSHEET_PATH)
@@ -63,6 +64,9 @@ function normalizeDay(value) {
 }
 
 function normalizeTime(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
+  }
   if (typeof value === "number") {
     const totalMinutes = Math.round(value * 24 * 60);
     return `${String(Math.floor(totalMinutes / 60)).padStart(2, "0")}:${String(totalMinutes % 60).padStart(2, "0")}`;
@@ -135,10 +139,12 @@ export function reloadSpreadsheet(filePath = spreadsheetPath) {
   if (!fs.existsSync(spreadsheetPath)) {
     state = { horarios: [], salas: [], cursos: [], loadedAt: new Date(), source: null };
     scheduleCache.clear();
+    for (const listener of listeners) listener(getSpreadsheetData());
     return getSpreadsheetData();
   }
 
-  const workbook = XLSX.readFile(spreadsheetPath, { cellDates: true });
+  // Sem cellDates: horas chegam como fração do dia e não sofrem com o fuso horário do servidor.
+  const workbook = XLSX.readFile(spreadsheetPath);
   const next = {
     horarios: parseHorarios(workbook),
     salas: parseSalas(workbook),

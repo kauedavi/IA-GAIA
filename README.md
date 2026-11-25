@@ -87,6 +87,7 @@ Variáveis suportadas:
 | `PORT` | Não | `3000` | Porta HTTP da API |
 | `CLIENT_ORIGIN` | Não | - | Origens adicionais permitidas pelo CORS, separadas por vírgula |
 | `GAIA_SPREADSHEET_PATH` | Não | `server/src/data/gaia.xlsx` | Caminho da planilha de horários, salas e cursos |
+| `GAIA_ADMIN_TOKEN` | Não | - | Senha para enviar ou recarregar a planilha pela API. Sem ela, essas duas rotas ficam desativadas |
 
 Exemplo:
 
@@ -241,7 +242,7 @@ Limite do corpo JSON: 32 KB.
 Exemplo de upload no PowerShell:
 
 ```powershell
-curl.exe -F "arquivo=@C:\caminho\gaia.xlsx" http://localhost:3000/api/planilha/upload
+curl.exe -H "Authorization: Bearer SEU_GAIA_ADMIN_TOKEN" -F "arquivo=@C:\caminho\gaia.xlsx" http://localhost:3000/api/planilha/upload
 ```
 
 ## Fonte de horários e salas
@@ -291,7 +292,13 @@ Colunas aceitas:
 
 Os nomes de abas e colunas são normalizados: não diferenciam maiúsculas, minúsculas, acentos, espaços ou sublinhados.
 
-O frontend pode enviar uma nova planilha pela tela de Configurações. A API informa a quantidade de horários, salas e cursos carregados.
+O envio (`/api/planilha/upload`) e a recarga (`/api/planilha/recarregar`) exigem o cabeçalho `Authorization: Bearer <GAIA_ADMIN_TOKEN>`. Sem `GAIA_ADMIN_TOKEN` configurado, as duas rotas respondem 403. A API informa a quantidade de horários, salas e cursos carregados.
+
+A planilha padrão `server/src/data/gaia.xlsx` já vem com a grade real da tarde (348 aulas, 13 turmas), gerada a partir de `server/src/database/gaia.db`. Depois de importar uma grade nova no banco (`server/imports/importarHorarios.js`), gere a planilha de novo:
+
+```bash
+node server/imports/exportarPlanilha.js
+```
 
 ## Streaming e otimizações
 

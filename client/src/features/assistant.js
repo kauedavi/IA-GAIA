@@ -484,10 +484,51 @@ function renderAgora() {
         "</div>";
   }
   $("cxAgora").innerHTML = h;
-  $("pontoIa").className = "ponto ok";
-  $("txIa").textContent = "online";
+  marcarIa(IA_ONLINE);
   renderSugestoes();
 }
+// ── estado real da IA: antes o topo sempre dizia "online", mesmo sem internet ou com o servidor fora do ar ──
+var IA_ONLINE = null,
+  IA_VERIFICANDO = false;
+function marcarIa(on) {
+  IA_ONLINE = on;
+  var ponto = $("pontoIa"),
+    tx = $("txIa");
+  if (!ponto || !tx) return;
+  ponto.className = on === true ? "ponto ok" : "ponto";
+  tx.textContent = on === true ? "online" : on === false ? "offline" : "verificando…";
+  if (on === null) verificarIa();
+}
+function verificarIa() {
+  if (IA_VERIFICANDO) return;
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    marcarIa(false);
+    return;
+  }
+  var base = String(window.GAIA_API_URL || "http://localhost:3000/api/chat").replace(/\/api\/chat\/?$/, "");
+  var ctrl = typeof AbortController === "function" ? new AbortController() : null;
+  var limite = setTimeout(function () {
+    if (ctrl) ctrl.abort();
+  }, 6000);
+  IA_VERIFICANDO = true;
+  fetch(base + "/health", { signal: ctrl ? ctrl.signal : undefined })
+    .then(function (r) {
+      marcarIa(!!(r && r.ok));
+    })
+    .catch(function () {
+      marcarIa(false);
+    })
+    .then(function () {
+      clearTimeout(limite);
+      IA_VERIFICANDO = false;
+    });
+}
+window.addEventListener("online", function () {
+  marcarIa(null);
+});
+window.addEventListener("offline", function () {
+  marcarIa(false);
+});
 function icone(n) {
   var p =
     {
@@ -504,7 +545,7 @@ function renderSugestoes() {
   var acoes = [
     ["▣", "Meus Horários de Aula", "Qual minha próxima aula?"],
     ["⌖", "Onde fica minha sala?", "Onde fica minha sala?"],
-    ["◎", "Mudar Idioma", "Quero mudar o idioma"],
+    ["◎", "Onde fica o banheiro?", "Onde fica o banheiro mais perto?"],
     ["◉", "Recursos de Acessibilidade", "Quais recursos de acessibilidade estão disponíveis?"],
   ];
   $("sugestoes").innerHTML = acoes
@@ -736,7 +777,7 @@ function contexto() {
       );
     });
   return (
-    "Você é o G.A.I.A (Hub de Apoio a Rotas e Informações), assistente do SENAI falando com " +
+    "Você é o G.A.I.A, assistente do SENAI falando com " +
     quem +
     ". " +
     "Seu foco: ajudar a se localizar na unidade (salas, blocos, laboratórios, banheiros, secretaria…) e informar horários. " +
@@ -886,17 +927,20 @@ window.gaiaResposta = function (id, js) {
     r = { ok: false, erro: "resposta inválida" };
   }
   if (!r.ok) {
+    marcarIa(false);
     HIST.pop();
     var l = local(p.txt);
-    responder(
-      l,
-      "IA indisponível (" + (r.erro || "erro") + ") · respondi no modo offline",
-    );
+    var motivo = /failed to fetch|networkerror|load failed/i.test(r.erro || "")
+      ? "sem conexão com o servidor"
+      : r.erro || "erro";
+    responder(l, "IA indisponível (" + motivo + ") · respondi no modo offline");
     return;
   }
   var t = String(r.texto || "").trim(),
     out = { texto: t };
-  if (r.action && r.action.type === "NAVIGATE_TO_ROOM" && r.action.roomId) {
+  marcarIa(true);
+  // só mostra "Ver rota" se a sala existir no mapa do app (o servidor pode usar ids de uma planilha diferente)
+  if (r.action && r.action.type === "NAVIGATE_TO_ROOM" && r.action.roomId && sala(r.action.roomId)) {
     out.sala = r.action.roomId;
   }
   var m = t.match(/\[MAPA:([^\]]+)\]/);
@@ -1056,7 +1100,7 @@ function local(q) {
   if (/\b(ajuda|o que voce faz|quem e voce|quem voce e)\b/.test(nq))
     return {
       texto:
-        "Eu sou o G.A.I.A, Hub de Apoio a Rotas e Informações. Pergunte coisas como: onde fica a secretaria, como chego no laboratório, qual minha próxima aula ou quais as aulas de quinta.",
+        "Eu sou o G.A.I.A, o assistente do SENAI Anchieta. Pergunte coisas como: onde fica a secretaria, como chego no laboratório, qual minha próxima aula ou quais as aulas de quinta.",
     };
   if (
     /\b(intervalo|recreio|lanche)\b/.test(nq) &&

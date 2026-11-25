@@ -2900,7 +2900,7 @@ nav button {
   width: 42px;
   height: 28px;
   margin-left: auto;
-  background: url("https://upload.wikimedia.org/wikipedia/commons/8/8c/SENAI_S%C3%A3o_Paulo_logo.png") center / contain no-repeat;
+  background: url("src/img/senai.svg") center / contain no-repeat;
 }
 
 #tHorarios .card,
@@ -3560,3 +3560,106 @@ html {
 :root[data-contraste="alto"] #tAjustes .seg button[aria-checked="true"] {
   color: #000;
 }
+/* ═════════════════════════════════════════════════════════════════════════════
+   Revisão de contraste e legibilidade (WCAG AA: texto ≥ 4,5:1, texto grande ≥ 3:1, texto ≥ 12 px)
+   Fica no fim do arquivo de propósito: corrige as regras anteriores sem mudar o visual geral.
+   ═════════════════════════════════════════════════════════════════════════════ */
+:root {
+  --tx3: #a1a1aa;            /* era #71717a: 3,0–3,5:1 nos cartões escuros */
+  --pri-tx: #ff6b73;         /* vermelho para TEXTO sobre fundo escuro (o #e30613 dá 3,6:1) */
+  --sobre-pri: #fff;         /* texto em cima de um fundo --pri */
+}
+:root[data-tema="claro"] {
+  --tx3: #7a4a4a;
+  --pri-tx: #b8000a;
+}
+#tHorarios.on, #tAgenda.on, #tCursos.on, #tUnidade.on, #tAjustes.on { --tx3: #5f5f5f; }
+:root:not([data-tema="claro"]) #tHorarios.on,
+:root:not([data-tema="claro"]) #tAgenda.on,
+:root:not([data-tema="claro"]) #tCursos.on,
+:root:not([data-tema="claro"]) #tUnidade.on,
+:root:not([data-tema="claro"]) #tAjustes.on { --tx3: #a1a1aa; }
+:root:not([data-tema="claro"]) #tGaia.chat-home.on { --chat-muted: #b4b4bc; }
+#tGaia.chat-home.on { --chat-muted: #5f5f5f; }
+
+/* barra de abas: 12 px, cinza legível e a aba ativa em vermelho legível */
+#nav > button { font-size: 12px; color: #5f5f5f; }
+:root:not([data-tema="claro"]) #nav > button { color: #b4b4bc; }
+:root #nav > button.on { color: var(--pri-tx); }
+:root[data-tema="claro"] #nav > button.on { color: #b8000a; }
+
+/* textos em vermelho sobre fundo escuro */
+:root #tCursos .curso .nv, :root #tAjustes > h3, :root .inicio-aviso-icone { color: var(--pri-tx); }
+:root[data-tema="claro"] #tCursos .curso .nv, :root[data-tema="claro"] #tAjustes > h3, :root[data-tema="claro"] .inicio-aviso-icone { color: #b8000a; }
+
+/* aulas que já passaram: antes ficavam com opacidade .55 (2,3:1); agora só o traço lateral fica cinza */
+.item.passou { opacity: 1; }
+.item.passou .tt { color: var(--tx2); }
+.item.passou .ds, .item.passou .hr { color: var(--tx3); }
+
+/* tela do mapa: rótulos de 9–11 px passam a ter pelo menos 12 px; campos com 16 px (o iPhone não dá zoom) */
+.mapa-subtitulo, .mapa-label, #origemTx, .mapa-ajuda { font-size: 12px; }
+#btOnde { font-size: 13px; }
+#bt2D, #bt3D { font-size: 12px; }
+#selDe, #buscaSala { font-size: 16px; }
+:root .mapa-tela .mapa-input > span, :root:not([data-tema="claro"]) .mapa-tela .mapa-input > span { color: var(--tx2); }
+
+/* cabeçalho e rodapé da conversa */
+#subUnidade, #txIa, .chat-brand-footer > span { font-size: 12px; }
+.chat-brand-footer { color: var(--chat-muted); }
+.voice-button { color: var(--chat-muted); }
+
+/* login: abas de perfil e rótulos */
+#tLogin .login-form-card .perfil { color: #5f5f5f; }
+:root:not([data-tema="claro"]) #tLogin .login-form-card .perfil { color: #b4b4bc; }
+#tLogin .campo > label { color: var(--tx2); }
+
+/* Configurações: descrição dos interruptores em linha própria; avatar legível */
+.alternar .nota.bloco, .nota.bloco { display: block; margin-top: 2px; }
+.conta .avatar { color: #fff; }
+
+/* ── Alto contraste: as telas internas redefiniam as cores e ignoravam a opção ── */
+:root[data-contraste="alto"] .tela,
+:root[data-contraste="alto"] #tHorarios.on,
+:root[data-contraste="alto"] #tAgenda.on,
+:root[data-contraste="alto"] #tCursos.on,
+:root[data-contraste="alto"] #tUnidade.on,
+:root[data-contraste="alto"] #tAjustes.on,
+:root[data-contraste="alto"] #tGaia.chat-home.on,
+:root[data-contraste="alto"] .mapa-tela,
+:root[data-contraste="alto"] nav {
+  --bg: #000; --bg2: #000; --card: #000; --card2: #111; --linha: #fff;
+  --tx: #fff; --tx2: #fff; --tx3: #e6e6e6; --pri: #ffd400; --pri2: #ffd400; --pri-tx: #ffd400; --sobre-pri: #000;
+  --chat-red: #ffd400; --chat-red-dark: #ffd400; --chat-ink: #fff; --chat-muted: #e6e6e6;
+}
+:root[data-contraste="alto"][data-tema="claro"] .tela,
+:root[data-contraste="alto"][data-tema="claro"] #tHorarios.on,
+:root[data-contraste="alto"][data-tema="claro"] #tAgenda.on,
+:root[data-contraste="alto"][data-tema="claro"] #tCursos.on,
+:root[data-contraste="alto"][data-tema="claro"] #tUnidade.on,
+:root[data-contraste="alto"][data-tema="claro"] #tAjustes.on,
+:root[data-contraste="alto"][data-tema="claro"] #tGaia.chat-home.on,
+:root[data-contraste="alto"][data-tema="claro"] .mapa-tela,
+:root[data-contraste="alto"][data-tema="claro"] nav {
+  --bg: #fff; --bg2: #fff; --card: #fff; --card2: #f2f2f2; --linha: #000;
+  --tx: #000; --tx2: #000; --tx3: #1a1a1a; --pri: #003d99; --pri2: #003d99; --pri-tx: #003d99; --sobre-pri: #fff;
+  --chat-red: #003d99; --chat-red-dark: #002a6b; --chat-ink: #000; --chat-muted: #1a1a1a;
+}
+:root[data-contraste="alto"] #nav > button { color: var(--tx); }
+:root[data-contraste="alto"] #nav > button.on { color: var(--pri-tx); }
+/* em alto contraste, tudo o que tem fundo da cor principal usa a cor principal de verdade e texto na cor certa */
+:root[data-contraste="alto"] #bt3D.on, :root[data-contraste="alto"] #bt3D.chip.on, :root[data-contraste="alto"] #bt2D.chip.on,
+:root[data-contraste="alto"] #nvProx, :root[data-contraste="alto"] .andar-controles button.on,
+:root[data-contraste="alto"] #btLogin, :root[data-contraste="alto"] #uMaps { background: var(--pri) !important; border-color: var(--pri) !important; }
+:root[data-contraste="alto"] .botao:not(.sec):not(.perigo),
+:root[data-contraste="alto"] #btLogin, :root[data-contraste="alto"] #uMaps,
+:root[data-contraste="alto"] #btSair,
+:root[data-contraste="alto"] #aTamanho > button.on,
+:root[data-contraste="alto"] .chip.on,
+:root[data-contraste="alto"] .chat-quick-actions .chip, :root[data-contraste="alto"] .chat-quick-actions .chip > span,
+:root[data-contraste="alto"] .assistant-bubble,
+:root[data-contraste="alto"] .conta .avatar,
+:root[data-contraste="alto"] .send-button,
+:root[data-contraste="alto"] #bt2D.on, :root[data-contraste="alto"] #bt3D.on,
+:root[data-contraste="alto"] .andar-controles button.on,
+:root[data-contraste="alto"] #nvProx { color: var(--sobre-pri) !important; }

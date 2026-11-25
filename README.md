@@ -252,6 +252,14 @@ e chamadas após pelo menos cinco minutos sem requisições. Essa classificaçã
 descreve o processo da API; o tempo de inicialização anterior ao recebimento da
 requisição pelo Node não é medido.
 
+As consultas determinísticas de horários usam um cache em memória limitado a
+128 combinações de filtros, limpo sempre que a planilha é recarregada. O cache
+é local ao processo da API: não persiste após reinícios e não é compartilhado
+entre instâncias. Os registros incluem hits, misses e duração média de cada
+caminho, sem registrar filtros ou resultados; use esses dados para comparar o
+uso e o custo local antes de decidir manter o cache em produção. Ele não
+armazena respostas completas do chat nem evita a chamada inicial ao Gemini.
+
 Salve as linhas JSON dos logs em um arquivo `.jsonl` e calcule p50/p95 geral e
 por estado de atividade, taxa de erros e uso de fallback com:
 
@@ -260,8 +268,10 @@ node server/scripts/summarize-latency.js caminho/para/api-logs.jsonl
 ```
 
 O resumo também informa a média de bytes de respostas de ferramentas por
-requisição, permitindo comparar o payload antes e depois de mudanças nas
-ferramentas.
+requisição e média/p50/p95 do tamanho da resposta HTTP, permitindo avaliar o
+tamanho entregue antes de decidir se um limite de geração é necessário. Essa
+métrica inclui o envelope JSON da API; compare-a junto à duração do Gemini e
+valide respostas representativas antes de limitar a saída.
 
 Para a comparação de produção, colete no mesmo deploy chamadas após períodos
 ociosos e chamadas subsequentes. O resumo local não envia dados a serviços

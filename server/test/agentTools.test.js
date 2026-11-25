@@ -11,17 +11,8 @@ import { reloadSpreadsheet } from "../src/services/spreadsheetService.js";
 const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gaia-agent-tools-"));
 const spreadsheetPath = path.join(temporaryDirectory, "schedule.xlsx");
 
-before(() => {
+function writeSchedules(schedules) {
   const workbook = XLSX.utils.book_new();
-  const schedules = Array.from({ length: 40 }, (_, index) => ({
-    turma: `T-${index + 1}`,
-    dia: "Segunda",
-    inicio: "08:00",
-    fim: "09:00",
-    disciplina: `Disciplina ${index + 1}`,
-    professor: `Professor ${index + 1}`,
-    sala: `Sala ${index + 1}`,
-  }));
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(schedules), "Horarios");
   XLSX.utils.book_append_sheet(
     workbook,
@@ -39,6 +30,19 @@ before(() => {
   );
   XLSX.writeFile(workbook, spreadsheetPath);
   reloadSpreadsheet(spreadsheetPath);
+}
+
+before(() => {
+  const schedules = Array.from({ length: 40 }, (_, index) => ({
+    turma: `T-${index + 1}`,
+    dia: "Segunda",
+    inicio: "08:00",
+    fim: "09:00",
+    disciplina: `Disciplina ${index + 1}`,
+    professor: `Professor ${index + 1}`,
+    sala: `Sala ${index + 1}`,
+  }));
+  writeSchedules(schedules);
 });
 
 after(() => {
@@ -80,6 +84,35 @@ test("returns an explicit empty schedule result without truncation metadata", ()
     encontrados: 0,
     horarios: [],
   });
+});
+
+test("reuses repeated schedule results and invalidates them after a spreadsheet reload", () => {
+  const metrics = {};
+  const firstResult = consultarHorarios({ turma: "T-1" }, metrics);
+  const cachedResult = consultarHorarios({ turma: "t-1" }, metrics);
+
+  assert.deepEqual(cachedResult, firstResult);
+  assert.equal(metrics.schedule_cache_misses, 1);
+  assert.equal(metrics.schedule_cache_hits, 1);
+  assert.ok(metrics.schedule_cache_miss_duration_ms >= 0);
+  assert.ok(metrics.schedule_cache_hit_duration_ms >= 0);
+
+  writeSchedules([{
+    turma: "T-1",
+    dia: "Segunda",
+    inicio: "10:00",
+    fim: "11:00",
+    disciplina: "Disciplina atualizada",
+    professor: "Professor atualizado",
+    sala: "Sala 1",
+  }]);
+
+  const refreshedMetrics = {};
+  const refreshedResult = consultarHorarios({ turma: "T-1" }, refreshedMetrics);
+  assert.equal(refreshedResult.horarios[0].disciplina, "Disciplina atualizada");
+  assert.ok(!refreshedResult.horarios.some(({ disciplina }) => disciplina === "Disciplina 1"));
+  assert.equal(refreshedMetrics.schedule_cache_misses, 1);
+  assert.equal(refreshedMetrics.schedule_cache_hits || 0, 0);
 });
 
 test("keeps the navigation action while returning only route details for the model", () => {

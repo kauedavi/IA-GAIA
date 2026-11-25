@@ -2,6 +2,7 @@ import { gemini, geminiFallbackModel, geminiModel } from "../config/gemini.js";
 import { systemInstruction } from "../agent/systemInstruction.js";
 import { toolDeclarations, toolHandlers } from "../agent/tools/index.js";
 import { performance } from "node:perf_hooks";
+import { respondToLocalRoomIntent } from "./localRoomIntent.js";
 
 const MAX_ROUNDS = 4;
 const MAX_RETRIES = 3;
@@ -19,6 +20,9 @@ const RETRYABLE_ERROR_CODES = new Set([
 ]);
 
 export async function chatService(message, metrics) {
+  const localResponse = respondToLocalRoomIntent(message);
+  if (localResponse) return localResponse;
+
   const deadline = performance.now() + CHAT_DEADLINE_MS;
   let contents = [{ role: "user", parts: [{ text: message }] }];
   let action = { type: "NONE" };
@@ -45,7 +49,7 @@ export async function chatService(message, metrics) {
       const startedAt = performance.now();
       let result;
       try {
-        result = handler(call.args || {});
+        result = handler(call.args || {}, metrics);
       } finally {
         if (metrics) {
           metrics.tools_called.push(call.name);

@@ -111,6 +111,8 @@ test("logs chat latency without sensitive content and summarizes latency percent
   );
   assert.deepEqual(metrics[0].tools_called, ["consultar_rota"]);
   assert.equal(metrics[0].tool_response_bytes, Buffer.byteLength('{"result":"ok"}'));
+  assert.equal(metrics[0].schedule_cache_hits, 0);
+  assert.equal(metrics[0].schedule_cache_misses, 0);
   const forwardedFunctionResponse = geminiRequests[4].contents
     .flatMap((content) => content.parts || [])
     .find((part) => part.functionResponse);
@@ -126,14 +128,31 @@ test("logs chat latency without sensitive content and summarizes latency percent
   assert.ok(metrics.every((record) => !JSON.stringify(record).includes("private provider error")));
 
   const summary = summarizeLatencyRecords([
-    { ...metrics[0], duration_ms: 10, gemini_duration_ms: 4 },
-    { ...metrics[1], duration_ms: 20, gemini_duration_ms: 0 },
-    { ...metrics[1], duration_ms: 30, gemini_duration_ms: 0 },
-    { ...metrics[1], duration_ms: 40, gemini_duration_ms: 0 },
+    {
+      ...metrics[0],
+      duration_ms: 10,
+      gemini_duration_ms: 4,
+      response_bytes: 10,
+      schedule_cache_hits: 2,
+      schedule_cache_misses: 1,
+      schedule_cache_hit_duration_ms: 0.4,
+      schedule_cache_miss_duration_ms: 2.4,
+    },
+    { ...metrics[1], duration_ms: 20, gemini_duration_ms: 0, response_bytes: 20 },
+    { ...metrics[1], duration_ms: 30, gemini_duration_ms: 0, response_bytes: 30 },
+    { ...metrics[1], duration_ms: 40, gemini_duration_ms: 0, response_bytes: 40 },
   ]);
   assert.deepEqual(summary.overall.duration_ms, { p50: 20, p95: 40 });
+  assert.deepEqual(summary.overall.response_bytes, { mean: 25, p50: 20, p95: 40 });
   assert.deepEqual(summary.overall.gemini_duration_ms, { p50: 0, p95: 4 });
   assert.equal(summary.overall.mean_tool_response_bytes, 3.75);
+  assert.deepEqual(summary.overall.schedule_cache, {
+    hits: 2,
+    misses: 1,
+    hit_rate_percent: 66.7,
+    hit_duration_ms_mean: 0.2,
+    miss_duration_ms_mean: 2.4,
+  });
   assert.equal(summary.overall.error_rate_percent, 75);
   assert.equal(summary.overall.fallback_attempt_rate_percent, 25);
   assert.equal(summary.by_service_activity.active.requests, 3);

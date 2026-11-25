@@ -13,8 +13,8 @@ export const horariosDeclaration = {
   }
 };
 
-export function consultarHorarios({ turma, dia, sala } = {}) {
-  const horarios = getHorarios({ turma, dia, sala }).map(
+export function consultarHorarios({ turma, dia, sala } = {}, metrics) {
+  const horarios = getHorarios({ turma, dia, sala }, metrics).map(
     ({ turma, dia, inicio, fim, disciplina, professor, sala }) => ({
       turma,
       dia,

@@ -27,6 +27,28 @@ function summarizeGroup(records) {
   const geminiDurations = records
     .map((record) => record.gemini_duration_ms)
     .filter((duration) => Number.isFinite(duration) && duration >= 0);
+  const responseSizes = records
+    .map((record) => record.response_bytes)
+    .filter((size) => Number.isFinite(size) && size >= 0);
+  const scheduleCacheHits = records.reduce(
+    (total, record) => total + (Number.isFinite(record.schedule_cache_hits) ? record.schedule_cache_hits : 0),
+    0
+  );
+  const scheduleCacheMisses = records.reduce(
+    (total, record) => total + (Number.isFinite(record.schedule_cache_misses) ? record.schedule_cache_misses : 0),
+    0
+  );
+  const scheduleCacheHitDuration = records.reduce(
+    (total, record) =>
+      total + (Number.isFinite(record.schedule_cache_hit_duration_ms) ? record.schedule_cache_hit_duration_ms : 0),
+    0
+  );
+  const scheduleCacheMissDuration = records.reduce(
+    (total, record) =>
+      total + (Number.isFinite(record.schedule_cache_miss_duration_ms) ? record.schedule_cache_miss_duration_ms : 0),
+    0
+  );
+  const scheduleCacheQueries = scheduleCacheHits + scheduleCacheMisses;
 
   return {
     requests: records.length,
@@ -38,9 +60,29 @@ function summarizeGroup(records) {
     fallback_success_rate_percent: percentage(fallbackSuccesses, records.length),
     mean_gemini_attempts: Math.round((geminiAttempts / records.length) * 100) / 100,
     mean_tool_response_bytes: Math.round((toolResponseBytes / records.length) * 100) / 100,
+    schedule_cache: {
+      hits: scheduleCacheHits,
+      misses: scheduleCacheMisses,
+      hit_rate_percent: percentage(scheduleCacheHits, scheduleCacheQueries),
+      hit_duration_ms_mean: scheduleCacheHits
+        ? Math.round((scheduleCacheHitDuration / scheduleCacheHits) * 1000) / 1000
+        : null,
+      miss_duration_ms_mean: scheduleCacheMisses
+        ? Math.round((scheduleCacheMissDuration / scheduleCacheMisses) * 1000) / 1000
+        : null,
+    },
     duration_ms: {
       p50: percentile(totalDurations, 0.5),
       p95: percentile(totalDurations, 0.95),
+    },
+    response_bytes: {
+      mean: responseSizes.length
+        ? Math.round(
+            (responseSizes.reduce((total, size) => total + size, 0) / responseSizes.length) * 100
+          ) / 100
+        : null,
+      p50: percentile(responseSizes, 0.5),
+      p95: percentile(responseSizes, 0.95),
     },
     gemini_duration_ms: {
       p50: percentile(geminiDurations, 0.5),

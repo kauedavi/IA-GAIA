@@ -1,9 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { performance } from "node:perf_hooks";
 import XLSX from "xlsx";
 import { fallbackSalas } from "../data/fallbackSalas.js";
 
+const MAX_SCHEDULE_CACHE_ENTRIES = 128;
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const defaultPath = path.resolve(currentDir, "../../data/gaia.xlsx");
 
@@ -13,6 +15,7 @@ let spreadsheetPath = process.env.GAIA_SPREADSHEET_PATH
 let state = { horarios: [], salas: [], cursos: [], loadedAt: null, source: null };
 const listeners = new Set();
 let watcher = null;
+const scheduleCache = new Map();
 
 function normalizeKey(value) {
   return String(value || "")
@@ -131,6 +134,7 @@ export function reloadSpreadsheet(filePath = spreadsheetPath) {
   spreadsheetPath = path.resolve(filePath);
   if (!fs.existsSync(spreadsheetPath)) {
     state = { horarios: [], salas: [], cursos: [], loadedAt: new Date(), source: null };
+    scheduleCache.clear();
     return getSpreadsheetData();
   }
 
@@ -143,6 +147,7 @@ export function reloadSpreadsheet(filePath = spreadsheetPath) {
     source: path.basename(spreadsheetPath),
   };
   state = next;
+  scheduleCache.clear();
   for (const listener of listeners) listener(getSpreadsheetData());
   return getSpreadsheetData();
 }
@@ -157,17 +162,77 @@ export function getSpreadsheetData() {
   };
 }
 
-export function getHorarios({ turma, dia, sala } = {}) {
+export function getHorarios({ turma, dia, sala } = {}, metrics) {
   const normalize = (value) => String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-  return state.horarios.filter((item) => {
-    const dayMatches = !dia || normalize(String(normalizeDay(dia))) === normalize(String(item.dia)) || normalize(item.dia) === normalize(dia);
-    return (!turma || normalize(item.turma).includes(normalize(turma))) &&
-      dayMatches && (!sala || normalize(item.sala).includes(normalize(sala)));
-  });
+  const normalizeFilter = (value) => value ? normalize(value) : "";
+  const normalizedDay = dia ? normalize(String(normalizeDay(dia))) : "";
+  const cacheKey = JSON.stringify([
+    normalizeFilter(turma),
+    normalizedDay,
+    dia ? normalize(dia) : "",
+    normalizeFilter(sala),
+  ]);
+  const startedAt = performance.now();
+  const cacheHit = scheduleCache.has(cacheKey);
+  let matches;
+
+  if (cacheHit) {
+    matches = scheduleCache.get(cacheKey);
+    scheduleCache.delete(cacheKey);
+    scheduleCache.set(cacheKey, matches);
+    if (metrics) {
+      metrics.schedule_cache_hits = (metrics.schedule_cache_hits || 0) + 1;
+    }
+  } else {
+    matches = state.horarios.filter((item) => {
+      const dayMatches = !dia || normalize(String(normalizeDay(dia))) === normalize(String(item.dia)) || normalize(item.dia) === normalize(dia);
+      return (!turma || normalize(item.turma).includes(normalize(turma))) &&
+        dayMatches && (!sala || normalize(item.sala).includes(normalize(sala)));
+    });
+    if (scheduleCache.size >= MAX_SCHEDULE_CACHE_ENTRIES) {
+      scheduleCache.delete(scheduleCache.keys().next().value);
+    }
+    scheduleCache.set(cacheKey, matches.slice());
+    if (metrics) {
+      metrics.schedule_cache_misses = (metrics.schedule_cache_misses || 0) + 1;
+    }
+  }
+
+  const result = cacheHit ? matches.slice() : matches;
+  if (metrics) {
+    const duration = Math.round((performance.now() - startedAt) * 1000) / 1000;
+    const durationKey = cacheHit
+      ? "schedule_cache_hit_duration_ms"
+      : "schedule_cache_miss_duration_ms";
+    metrics[durationKey] = (metrics[durationKey] || 0) + duration;
+  }
+  return result;
 }
 
 export function getSalas() {
   return state.salas;
+}
+
+export function findExactSala(destino) {
+  const normalize = (value) => String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  const query = normalize(destino);
+  if (!query) return null;
+
+  const matches = (salas) => salas.filter((sala) =>
+    normalize(sala.id) === query || normalize(sala.nome) === query
+  );
+  const spreadsheetMatches = matches(state.salas);
+  if (spreadsheetMatches.length) {
+    return spreadsheetMatches.length === 1 ? spreadsheetMatches[0] : null;
+  }
+
+  const fallbackMatches = matches(fallbackSalas);
+  return fallbackMatches.length === 1 ? fallbackMatches[0] : null;
 }
 
 export function findSala(destino) {

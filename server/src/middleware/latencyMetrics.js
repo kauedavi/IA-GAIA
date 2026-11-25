@@ -35,6 +35,10 @@ export function latencyMetrics(req, res, next) {
     fallback_attempted: false,
     fallback_used: false,
     tools_called: [],
+    schedule_cache_hits: 0,
+    schedule_cache_misses: 0,
+    schedule_cache_hit_duration_ms: 0,
+    schedule_cache_miss_duration_ms: 0,
     response_bytes: null,
   };
   activeRequestCount += 1;

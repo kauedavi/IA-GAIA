@@ -61,7 +61,7 @@ function nomeAndar(a) {
   return a === 0
     ? "pavimento térreo"
     : a < 0
-      ? "subsolo 1 (laboratórios)"
+      ? "subsolo"
       : a === 1
         ? "pavimento superior"
         : a + "º andar";

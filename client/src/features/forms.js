@@ -272,7 +272,7 @@ function editarSala(id, rasc) {
             ((+s.andar || 0) === a ? " selected" : "") +
             ">" +
             (a < 0
-              ? "Subsolo 1 (Laboratórios)"
+              ? "Subsolo"
               : a === 0
                 ? "Pavimento Térreo"
                 : a === 1

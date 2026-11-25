@@ -469,7 +469,7 @@ function renderAgora() {
       esc(D.unidade) +
       '</div><div class="ds">' +
       esc(rec.t ? rec.t + ": " + rec.h : "") +
-      '</div></div><button class="botao peq" onclick="mostrarRota(\'recepcao\')">Recepção</button></div>';
+      '</div></div><button class="botao peq" onclick="mostrarRota(\'secretaria\')">Recepção</button></div>';
   } else {
     var ev = proximosEventos(1)[0];
     if (ev)

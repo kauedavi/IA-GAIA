@@ -36,7 +36,7 @@ export function respondToLocalRoomIntent(message) {
 
 function formatFloorLocation(andar) {
   if (!Number.isFinite(andar)) return null;
-  if (andar === -1) return "no subsolo 1 (laboratórios)";
+  if (andar === -1) return "no subsolo";
   if (andar === 0) return "no pavimento térreo";
   if (andar === 1) return "no pavimento superior";
   return `no ${andar}º andar`;

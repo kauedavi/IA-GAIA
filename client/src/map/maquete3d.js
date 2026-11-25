@@ -35,7 +35,7 @@ cor3=function(){var k=cor3Base();if(k.il)return k;var c=k.claro;
   return k};
 
 // ── tipo visual de cada sala (só para escolher piso e móveis) ──
-var IL_INFO=/^(L5_conectividade|L6_eletronica_digital|L7_informatica_1|L8_informatica_2|L9_redes)$/;
+var IL_INFO=/^(labprojman|labprojetos|labsoftware|labmicro|labcadcam|labeletronica|labei\d|lab1[678])$/;
 function tipoIl(s){var id=s.id;
   if(id==="quadra"||id==="quadra_poliesportiva")return "quadra";
   if(id==="area_de_convivencia"||id==="areacoberta")return "coberta";

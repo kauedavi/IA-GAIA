@@ -2207,6 +2207,8 @@ var mostrarRota2D = mostrarRota;
 mostrarRota = function (id) {
   sairNav(true);
   mostrarRota2D(id);
+  // redesenha a planta 2D com o andar e a rota do destino (antes ficava a planta anterior)
+  if (!usar3D()) desenharMapa2D();
   if (usar3D()) {
     focoParaRota();
     atualizar3D();
@@ -2418,45 +2420,29 @@ function definirOrigem(id) {
 }
 function ondeEstou() {
   var grupos = [
+    ["Entradas", ["entrada", "acessoOtonis", "estacionamento"]],
     [
-      "Pavimento Térreo — onde você está?",
+      "Térreo — o que você vê perto de você?",
       [
-        "recepcao",
+        "hall",
         "secretaria",
-        "nucleo_tic",
-        "coordenacao_pedagogica",
-        "sala_professores",
-        "auditorio",
-        "sanitarios_terreo",
+        "sanhall",
+        "sanmasc",
         "refeitorio",
-        "area_de_convivencia",
-        "quadra_poliesportiva",
+        "cantina",
+        "recreacao",
+        "auditorio",
+        "areacoberta",
+        "quadra",
+        "saladocente",
+        "labmaq",
       ],
     ],
-    [
-      "Pavimento Superior",
-      ["biblioteca", "sala_de_aula_1", "sala_de_aula_2", "sala_de_aula_3"],
-    ],
-    [
-      "Subsolo 1 — Laboratórios",
-      [
-        "L1_laboratorio_automacao",
-        "L2_ensaios_conectividade_simulacoes",
-        "L3_eletronica_potencia",
-        "L4_eletricidade",
-        "L5_conectividade",
-        "L6_eletronica_digital",
-        "L7_informatica_1",
-        "L8_informatica_2",
-        "L9_redes",
-        "L10_manufatura",
-        "L18_laboratorio_automacao_industrial",
-        "saida_para_rampa",
-      ],
-    ],
+    ["Pavimento superior", ["leitura", "biblioteca", "saladesenho", "sa1"]],
+    ["Subsolo", ["lab17", "lab19"]],
   ];
   var h =
-    '<p class="nota" style="margin:0 0 10px">Clique no lugar onde você está (ou no mais perto). Dica: o código da porta (ex.: L1, L7) fica na placa ao lado da entrada.</p>';
+    '<p class="nota" style="margin:0 0 10px">Clique no lugar onde você está (ou no mais perto). Não sabe? Procure a placa com o nome ou o número na porta mais próxima, ou algo fácil de ver: a cantina, a quadra, uma escada.</p>';
   grupos.forEach(function (g) {
     var ls = g[1].map(sala).filter(Boolean);
     if (!ls.length) return;

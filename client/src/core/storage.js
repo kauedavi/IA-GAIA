@@ -253,6 +253,63 @@ if (D.versao < 7) {
     localStorage.setItem("gaia_dados", JSON.stringify(D));
   } catch (e) {}
 }
+// 3.0: o mapa passa a ser o do H.A.R.I 2.1 (planta oficial de 2022 relida, 52 lugares, elevador).
+// Troca blocos, salas, rede, ruas e cena; as aulas e a agenda apontam para as salas novas.
+if (D.versao < 8) {
+  var EX8 = exemplo();
+  var MAP8 = {
+    recepcao: "secretaria",
+    secretaria: "secretaria",
+    nucleo_tic: "diretoria",
+    coordenacao_pedagogica: "coordtec",
+    sala_professores: "saladocente",
+    sanitarios_terreo: "sanhall",
+    area_de_convivencia: "areacoberta",
+    quadra_poliesportiva: "quadra",
+    sala_de_aula_1: "sa1",
+    sala_de_aula_2: "sa2",
+    sala_de_aula_3: "sa3",
+    L1_laboratorio_automacao: "labmaq",
+    L2_ensaios_conectividade_simulacoes: "labmetrologia",
+    L3_eletronica_potencia: "labeletronica",
+    L4_eletricidade: "labcomandos",
+    L5_conectividade: "labcadcam",
+    L6_eletronica_digital: "labmicro",
+    L7_informatica_1: "labrobotica",
+    L8_informatica_2: "labsoftware",
+    L9_redes: "labsoftware",
+    L10_manufatura: "labmanuf",
+    L18_laboratorio_automacao_industrial: "lab18",
+    saida_para_rampa: "lab19",
+  };
+  var mapearId8 = function (id) {
+    return MAP8[id] || id;
+  };
+  var idsMapa8 = {};
+  EX8.salas.forEach(function (s) {
+    idsMapa8[s.id] = 1;
+  });
+  var extras8 = D.salas.filter(function (s) {
+    return !MAP8[s.id] && !idsMapa8[s.id];
+  });
+  D.salas = EX8.salas.concat(extras8);
+  D.blocos = EX8.blocos;
+  D.rede = EX8.rede;
+  D.ruas = EX8.ruas;
+  D.cena = EX8.cena;
+  D.mapaFonte = EX8.mapaFonte;
+  D.mapaAproximado = EX8.mapaAproximado;
+  D.aulas.forEach(function (a) {
+    a.sala = mapearId8(a.sala);
+  });
+  (D.agenda || []).forEach(function (e) {
+    e.sala = mapearId8(e.sala);
+  });
+  D.versao = 8;
+  try {
+    localStorage.setItem("gaia_dados", JSON.stringify(D));
+  } catch (e) {}
+}
 var CFG;
 try {
   CFG = JSON.parse(lerLS("gaia_cfg", "{}")) || {};
@@ -265,12 +322,12 @@ if (CFG.contraste === undefined) CFG.contraste = false;
 if (CFG.acessivel === undefined) CFG.acessivel = false;
 if (CFG.navVoz === undefined) CFG.navVoz = false;
 if (CFG.som === undefined) CFG.som = false;
+if (CFG.de && !sala(CFG.de) && typeof MAP8 !== "undefined" && MAP8[CFG.de])
+  CFG.de = MAP8[CFG.de];
 if (!CFG.de || !sala(CFG.de))
-  CFG.de = sala("recepcao")
-    ? "recepcao"
-    : sala("entrada")
-      ? "entrada"
-      : (D.salas[0] || {}).id;
+  CFG.de = sala("entrada")
+    ? "entrada"
+    : (D.salas[0] || {}).id;
 if (CFG.lembrete === undefined) CFG.lembrete = 10;
 function salvar() {
   if (!gravarLS("gaia_dados", JSON.stringify(D)))

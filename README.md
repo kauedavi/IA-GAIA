@@ -186,6 +186,7 @@ IA-HARI/
 - `client/src/bootstrap.js`: composição da interface e inicialização.
 - `client/src/features/`: chat, agenda, autenticação, horários e dados da unidade.
 - `client/src/map/`: mapa 2D e visualizações 3D.
+- `client/src/data/appData.js`: dados do mapa (blocos, salas, rede de caminhos, ruas e cena da maquete), vindos do mapa do H.A.R.I 2.1: 52 lugares em subsolo, térreo e pavimento superior, com elevador. Quem já usava o app migra sozinho (versão 8 dos dados em `core/storage.js`).
 - `client/src/platform/platform.js`: voz, microfone, notificações e ponte Android.
 - `client/src/features/chatStream.js`: consumo de SSE e fallback JSON.
 

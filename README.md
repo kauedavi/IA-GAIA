@@ -93,7 +93,7 @@ Variáveis suportadas:
 | `GAIA_ADMIN_TOKEN` | Não | - | Senha para enviar ou recarregar a planilha pela API. Sem ela, essas duas rotas ficam desativadas |
 | `GAIA_DATABASE_PATH` | Não | `server/src/database/gaia.db` | Caminho do banco SQLite de horários |
 | `SUPABASE_URL` | Não | - | URL do projeto Supabase. Sem ela, o login na nuvem fica desligado |
-| `SUPABASE_ANON_KEY` | Não | - | Chave pública (anon) do Supabase, usada para validar o token do usuário |
+| `SUPABASE_ANON_KEY` | Não | - | Chave pública do Supabase (publishable ou anon legada), usada para validar o token do usuário |
 | `SUPABASE_SERVICE_ROLE_KEY` | Não | - | Chave que ignora o RLS. Só no servidor, só para operações administrativas |
 
 Exemplo:
@@ -137,31 +137,31 @@ O perfil "visitante" nunca cria conta: ele usa o app sem login nos dois modos.
 
 1. Crie um projeto em [supabase.com](https://supabase.com).
 2. No **SQL Editor**, rode `supabase/migrations/0001_profiles.sql`. Ele cria a tabela `profiles` ligada a `auth.users`, com RLS e o trigger que preenche o perfil no cadastro.
-3. Em **Settings → API**, copie a URL do projeto e a chave `anon`.
+3. No diálogo **Connect** do projeto, copie a URL e a chave pública `publishable` ou `anon` legada.
 4. No cliente, preencha `client/src/config.js`:
 
    ```js
    export const GAIA_SUPABASE = {
      url: "https://SEU-PROJETO.supabase.co",
-     anonKey: "sua_anon_key",
+     anonKey: "sua_chave_publica",
    };
    ```
 
-5. No servidor, preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY` no `.env`.
+5. No servidor local, preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY` no `server/.env` com os mesmos valores. Para habilitar a API publicada, configure essas variáveis também no serviço do Railway. Se usar o app Android, rode `npm run cap:sync` na raiz depois de preencher a configuração do cliente.
 6. Em **Authentication → Providers → Email**, decida se exige confirmação de e-mail. Com a confirmação ligada, o cadastro não entra direto: o app avisa para confirmar o e-mail antes.
 
-> A chave `anon` é pública por natureza — ela vai para o navegador de qualquer jeito, e quem protege os dados é o RLS. A `service_role` key ignora o RLS: ela só pode existir no servidor, nunca em `client/`.
+> A chave `publishable` ou `anon` vai para o navegador. O RLS protege os dados, e as chaves `secret` e `service_role` ficam exclusivamente no servidor.
 
 ### Como a sessão funciona
 
 - O cliente guarda `access_token` e `refresh_token` em `localStorage` e renova o token 1 minuto antes de expirar.
 - Nas chamadas a `/api/chat` e `/api/chat/stream`, o cliente manda `Authorization: Bearer <access_token>`.
-- O servidor valida o token em `GET /auth/v1/user` do Supabase, com cache curto em memória — assim um logout passa a valer na hora.
+- O servidor valida o token em `GET /auth/v1/user` do Supabase e consulta `profiles` para obter o papel e o nome. O resultado fica em cache por até um minuto ou até o token expirar.
 - Ao abrir o app, uma sessão salva é reconfirmada com o Supabase; se o refresh token já expirou, o app volta para a tela de login.
 
 ### Perfis
 
-`profiles.role` aceita `aluno`, `professor`, `empresa` e `admin`. Ninguém se promove pelo cliente: o RLS impede, então `role` só muda por `service_role` ou pelo SQL Editor.
+`profiles.role` aceita `aluno`, `professor`, `empresa` e `admin`. O cadastro público aceita os três primeiros perfis. Após o cadastro, a alteração de `role` exige `service_role` ou acesso ao SQL Editor.
 
 No servidor, use os middlewares de `server/src/middleware/supabaseAuth.js`:
 

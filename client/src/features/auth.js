@@ -332,11 +332,12 @@ function entrarPelaNuvem(sessao, dadosDoCadastro) {
   if (!sessao || !sessao.usuario) return Promise.resolve(false);
 
   var meta = sessao.usuario.user_metadata || {};
+  var perfilInicial = (dadosDoCadastro && dadosDoCadastro.perfil) || meta.role;
   SESSAO = {
     id: sessao.usuario.id,
     email: sessao.usuario.email || "",
     nome: (dadosDoCadastro && dadosDoCadastro.nome) || meta.nome || "",
-    perfil: (dadosDoCadastro && dadosDoCadastro.perfil) || meta.role || "aluno",
+    perfil: ["professor", "empresa"].includes(perfilInicial) ? perfilInicial : "aluno",
     turma: (dadosDoCadastro && dadosDoCadastro.turma) || meta.turma || "",
     disciplinas: (dadosDoCadastro && dadosDoCadastro.disciplinas) || meta.disciplinas || "",
     empresa: (dadosDoCadastro && dadosDoCadastro.empresa) || meta.empresa || "",

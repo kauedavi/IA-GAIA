@@ -31,7 +31,7 @@ function desconfigurar() {
   limparCacheDeUsuarios();
 }
 
-function responderCom(status, corpo) {
+function responderCom(status, corpo, perfis = []) {
   const chamadas = [];
 
   globalThis.fetch = async (url, opcoes) => {
@@ -40,7 +40,7 @@ function responderCom(status, corpo) {
     return {
       ok: status >= 200 && status < 300,
       status,
-      json: async () => corpo,
+      json: async () => String(url).includes("/rest/v1/profiles?") ? perfis : corpo,
     };
   };
 
@@ -76,8 +76,7 @@ test("verificarToken devolve o usuário e manda os cabeçalhos certos", async ()
   const chamadas = responderCom(200, {
     id: "uuid-1",
     email: "aluno@senai.br",
-    user_metadata: { role: "professor", nome: "Ana" },
-  });
+  }, [{ role: "professor", nome: "Ana" }]);
 
   const usuario = await verificarToken(tokenFalso());
 
@@ -87,13 +86,13 @@ test("verificarToken devolve o usuário e manda os cabeçalhos certos", async ()
     role: "professor",
     nome: "Ana",
   });
-  assert.equal(chamadas.length, 1);
+  assert.equal(chamadas.length, 2);
   assert.equal(chamadas[0].url, "https://projeto.supabase.co/auth/v1/user");
   assert.equal(chamadas[0].opcoes.headers.apikey, "anon-de-teste");
   assert.match(chamadas[0].opcoes.headers.Authorization, /^Bearer /);
 });
 
-test("verificarToken usa 'aluno' quando o metadata não traz role", async () => {
+test("verificarToken usa 'aluno' quando o perfil não existe", async () => {
   configurar();
   responderCom(200, { id: "uuid-2", email: "x@senai.br" });
 
@@ -111,7 +110,7 @@ test("verificarToken não repete a ida à rede para o mesmo token", async () => 
   await verificarToken(token);
   await verificarToken(token);
 
-  assert.equal(chamadas.length, 1, "a segunda chamada deveria vir do cache");
+  assert.equal(chamadas.length, 2, "a segunda verificação deveria vir do cache");
 });
 
 test("verificarToken não guarda em cache token já expirado", async () => {
@@ -122,7 +121,7 @@ test("verificarToken não guarda em cache token já expirado", async () => {
   await verificarToken(expirado);
   await verificarToken(expirado);
 
-  assert.equal(chamadas.length, 2);
+  assert.equal(chamadas.length, 4);
 });
 
 test("verificarToken traduz 401 do Supabase em erro 401", async () => {
@@ -160,7 +159,7 @@ test("autenticar responde 401 sem cabeçalho", async () => {
 
 test("autenticar anexa req.usuario com token válido", async () => {
   configurar();
-  responderCom(200, { id: "uuid-5", email: "ok@senai.br", user_metadata: { role: "admin" } });
+  responderCom(200, { id: "uuid-5", email: "ok@senai.br" }, [{ role: "admin" }]);
   const req = { headers: { authorization: `Bearer ${tokenFalso()}` } };
 
   const erro = await new Promise((resolve) => autenticar(req, {}, resolve));

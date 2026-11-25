@@ -1,12 +1,8 @@
 // Validação de token do Supabase Auth, sem SDK e sem dependência nova.
 //
 // O cliente manda o access_token (JWT) no header Authorization. Em vez de
-// verificar a assinatura localmente (o que exigiria acompanhar rotação de
-// chave), perguntamos ao próprio Supabase em GET /auth/v1/user. Assim um
-// logout ou um usuário banido deixa de valer na hora.
-//
-// Para não fazer uma ida à rede por requisição, o resultado fica num cache
-// curto em memória, limitado pelo exp do próprio token.
+// verificar a assinatura localmente, consultamos GET /auth/v1/user e lemos
+// o papel na tabela profiles. O cache curto é limitado pelo exp do token.
 
 const CACHE_TTL_MS = 60_000;
 const MAX_CACHE_ENTRIES = 500;
@@ -69,26 +65,11 @@ export function limparCacheDeUsuarios() {
   userCache.clear();
 }
 
-/**
- * Troca um access_token por { id, email, role, nome } ou lança erro com status.
- */
-export async function verificarToken(token) {
-  if (!isSupabaseConfigured()) {
-    throw erro(503, "Autenticação não configurada neste servidor.", "supabase_not_configured");
-  }
-
-  if (!token) {
-    throw erro(401, "Token ausente.", "missing_token");
-  }
-
-  const emCache = lerCache(token);
-
-  if (emCache) return emCache;
-
+async function consultarSupabase(caminho, token) {
   let response;
 
   try {
-    response = await fetch(`${baseUrl()}/auth/v1/user`, {
+    response = await fetch(`${baseUrl()}${caminho}`, {
       headers: {
         Authorization: `Bearer ${token}`,
         apikey: process.env.SUPABASE_ANON_KEY,
@@ -110,12 +91,32 @@ export async function verificarToken(token) {
     throw erro(503, "Serviço de autenticação indisponível.", "supabase_error");
   }
 
-  const body = await response.json();
+  return response.json();
+}
+
+/**
+ * Troca um access_token por { id, email, role, nome } ou lança erro com status.
+ */
+export async function verificarToken(token) {
+  if (!isSupabaseConfigured()) {
+    throw erro(503, "Autenticação não configurada neste servidor.", "supabase_not_configured");
+  }
+
+  if (!token) {
+    throw erro(401, "Token ausente.", "missing_token");
+  }
+
+  const emCache = lerCache(token);
+  if (emCache) return emCache;
+
+  const body = await consultarSupabase("/auth/v1/user", token);
+  const filtros = new URLSearchParams({ select: "role,nome", id: `eq.${body.id}` });
+  const [perfil] = await consultarSupabase(`/rest/v1/profiles?${filtros}`, token);
   const user = {
     id: body.id,
     email: body.email ?? null,
-    role: body.user_metadata?.role ?? "aluno",
-    nome: body.user_metadata?.nome ?? null,
+    role: perfil?.role ?? "aluno",
+    nome: perfil?.nome ?? body.user_metadata?.nome ?? null,
   };
 
   gravarCache(token, user);

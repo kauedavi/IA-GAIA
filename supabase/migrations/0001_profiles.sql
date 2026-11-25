@@ -11,6 +11,8 @@
 -- "visitante" não existe como perfil no banco: visitante é quem usa o app
 -- sem conta, então não há linha em auth.users para ele.
 
+begin;
+
 create type public.gaia_role as enum ('aluno', 'professor', 'empresa', 'admin');
 
 create table public.profiles (
@@ -29,35 +31,46 @@ comment on table public.profiles is 'Dados de perfil do G.A.I.A. para cada usuá
 create index profiles_role_idx on public.profiles (role);
 
 -- ── Row Level Security ──────────────────────────────────────────────
--- Sem isto, a anon key daria acesso à tabela inteira.
 alter table public.profiles enable row level security;
 
 -- Cada um lê e escreve apenas o próprio perfil.
 create policy "perfil proprio: leitura"
-  on public.profiles for select
-  using (auth.uid() = id);
+  on public.profiles for select to authenticated
+  using ((select auth.uid()) = id);
 
 create policy "perfil proprio: atualizacao"
-  on public.profiles for update
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
+  on public.profiles for update to authenticated
+  using ((select auth.uid()) = id)
+  with check ((select auth.uid()) = id);
 
--- A criação normalmente vem do trigger abaixo; esta policy cobre o caso
--- de o cliente criar o perfil logo após o signup.
-create policy "perfil proprio: insercao"
-  on public.profiles for insert
-  with check (auth.uid() = id);
+revoke all on public.profiles from public, anon, authenticated;
+grant select on public.profiles to authenticated;
+grant update (nome, turma, disciplinas, empresa) on public.profiles to authenticated;
+grant all on public.profiles to service_role;
 
--- Ninguém promove a si mesmo a admin pelo cliente: a coluna role só muda
--- por service_role (que ignora RLS) ou pelo SQL Editor.
-create policy "admin le todos os perfis"
-  on public.profiles for select
-  using (
-    exists (
-      select 1 from public.profiles autor
-      where autor.id = auth.uid() and autor.role = 'admin'
-    )
+create schema if not exists gaia_private;
+revoke all on schema gaia_private from public;
+grant usage on schema gaia_private to authenticated;
+
+create function gaia_private.usuario_e_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = (select auth.uid()) and role = 'admin'
   );
+$$;
+
+revoke all on function gaia_private.usuario_e_admin() from public;
+grant execute on function gaia_private.usuario_e_admin() to authenticated;
+
+create policy "admin le todos os perfis"
+  on public.profiles for select to authenticated
+  using ((select gaia_private.usuario_e_admin()));
 
 -- ── Perfil criado junto com o usuário ───────────────────────────────
 -- Os dados vêm do options.data do signup (raw_user_meta_data).
@@ -72,10 +85,11 @@ begin
   values (
     new.id,
     coalesce(nullif(trim(new.raw_user_meta_data ->> 'nome'), ''), 'Sem nome'),
-    coalesce(
-      nullif(new.raw_user_meta_data ->> 'role', '')::public.gaia_role,
-      'aluno'
-    ),
+    case new.raw_user_meta_data ->> 'role'
+      when 'professor' then 'professor'::public.gaia_role
+      when 'empresa' then 'empresa'::public.gaia_role
+      else 'aluno'::public.gaia_role
+    end,
     nullif(trim(new.raw_user_meta_data ->> 'turma'), ''),
     nullif(trim(new.raw_user_meta_data ->> 'disciplinas'), ''),
     nullif(trim(new.raw_user_meta_data ->> 'empresa'), '')
@@ -104,3 +118,5 @@ $$;
 create trigger profiles_atualizado_em
   before update on public.profiles
   for each row execute function public.tocar_atualizado_em();
+
+commit;

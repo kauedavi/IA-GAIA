@@ -174,11 +174,13 @@
     return sessao && sessao.usuario ? sessao.usuario : null;
   }
 
-  // Lê o perfil da tabela profiles (sujeito ao RLS: só o próprio).
+  // Filtra pelo usuário da sessão, inclusive para admins que podem ler outros perfis.
   function perfilDoBanco() {
     return token().then(function (acesso) {
-      if (!acesso) return null;
-      return fetch(urlBase() + "/rest/v1/profiles?select=*", {
+      var id = usuario()?.id;
+      if (!acesso || !id) return null;
+      var filtros = new URLSearchParams({ select: "*", id: "eq." + id });
+      return fetch(urlBase() + "/rest/v1/profiles?" + filtros, {
         headers: {
           apikey: cfg().anonKey,
           Authorization: "Bearer " + acesso,

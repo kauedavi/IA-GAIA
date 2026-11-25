@@ -19,6 +19,7 @@ export function consultarRota({ destino }) {
         encontrado: true,
         sala: {
           nome: sala.nome,
+          ...(sala.codigo_porta ? { codigo_porta: sala.codigo_porta } : {}),
           bloco: sala.bloco,
           andar: sala.andar,
           dica: sala.dica,

@@ -26,12 +26,25 @@ var ALT3 = 24,
   NORTE3 = 1.94; // NORTE3: o norte da planta fica 111° à direita do "para cima" do mapa
 var TIPO3 = {
   lab: "#2ee6c5",
+  laboratorio: "#2ee6c5",
   oficina: "#2ee6c5",
   sala: "#5aa9ff",
+  sala_de_aula: "#5aa9ff",
+  biblioteca: "#5aa9ff",
   adm: "#b48cff",
+  administrativo: "#b48cff",
+  administrativo_tecnico: "#b48cff",
   servico: "#8fb3c0",
+  sanitario: "#8fb3c0",
   convivencia: "#ffa45c",
+  alimentacao: "#ffa45c",
+  auditorio: "#ff6b8b",
+  area_externa: "#5ee08a",
+  esporte: "#5ee08a",
   acesso: "#ffd166",
+  atendimento: "#ffd166",
+  acesso_emergencia: "#ff6b8b",
+  transicao_vertical: "#ffd166",
 };
 var TIPO3N = {
   lab: "Laboratórios",
@@ -249,7 +262,7 @@ function andarNo(k) {
   return n && n[3] != null ? +n[3] : 0;
 }
 function ehVert(k) {
-  return /^(escada|elev)/.test(k || "");
+  return /^(escada|elev|plataforma)/.test(k || "");
 }
 function cena3() {
   return D.cena || {};
@@ -301,7 +314,9 @@ function giro(hx, hy, vx, vy) {
   return (Math.atan2(hx * vy - hy * vx, hx * vx + hy * vy) * 180) / Math.PI;
 } // >0 = direita (y para baixo)
 function prepos(nm) {
-  return /^(circulação|área|passagem|escada|entrada|rua|plataforma)/i.test(nm)
+  return /^(circulação|área|passagem|escada|entrada|rua|plataforma|saída)/i.test(
+    nm,
+  )
     ? "pela "
     : "pelo ";
 }
@@ -338,7 +353,7 @@ function referencia3(px, py, a, hx, hy, evita) {
   if (Math.abs(ang) > 150) return "";
   return (
     (mel.ic ? mel.ic + " " : "") +
-    rotuloCurto(mel.nome) +
+    rotuloCurto(mel) +
     " fica " +
     ladoTxt(ang) +
     "."
@@ -424,7 +439,7 @@ function passosNav() {
   pernas.forEach(function (g, n) {
     if (g.vert) {
       var sobe = g.para.a > g.de.a,
-        el = /^elev/.test(g.de.k || g.para.k || ""),
+        el = /^(elev|plataforma)/.test(g.de.k || g.para.k || ""),
         nm = g.de.k ? D.rede.nos[g.de.k][2] : "escada";
       out.push({
         ic: sobe ? "⬆" : "⬇",
@@ -435,7 +450,7 @@ function passosNav() {
         i1: g.i1,
         m: 0,
         txt: el
-          ? "Pegue o " +
+          ? "Pegue a " +
             nm.replace(/ \(.*\)$/, "") +
             " e " +
             (sobe ? "suba" : "desça") +
@@ -450,7 +465,7 @@ function passosNav() {
             nomeAndar(g.para.a) +
             ".",
         sub: el
-          ? "Elevador acessível."
+          ? "Rota acessível pela plataforma PCD."
           : "Você chega no " + nomeAndar(g.para.a) + ".",
       });
       ant = null;
@@ -1315,7 +1330,7 @@ function cenaMaqueteNova(ctx, k, r3) {
         var s = o.s,
           dest = s.id === DESTINO,
           orig = s.id === CFG.de;
-        if (s.id === "quadra") {
+        if (s.id === "quadra" || s.id === "quadra_poliesportiva") {
           var cr = dest ? k.dest : orig ? k.azul : null;
           s.__topo = retPts(s.r).map(function (q) {
             return P3(q[0], q[1], z + 1);
@@ -1332,7 +1347,11 @@ function cenaMaqueteNova(ctx, k, r3) {
         var e = o.e,
           el = e.tipo === "elevador",
           usa = r3.some(function (p) {
-            return p.k && p.k.indexOf(e.id) === 0;
+            return (
+              p.k &&
+              (p.k.indexOf(e.id) === 0 ||
+                (el && /^(elev|plataforma)/.test(p.k)))
+            );
           });
         escadaMaquete(ctx, k, e, z, usa);
         if (ativo) {
@@ -1459,7 +1478,7 @@ function cenaMaqueteNova(ctx, k, r3) {
         M3.hit.push({ id: s.id, pt: p, d: proj3(s.x, s.y, z).d + 5 });
         rotulos.push({
           ic: s.ic || "📍",
-          tx: rotuloCurto(s.nome),
+          tx: rotuloCurto(s),
           x: p.x,
           y: p.y,
           pri: s.id === DESTINO ? 10 : s.tipo === "acesso" ? 6 : 4,
@@ -1484,7 +1503,7 @@ function cenaMaqueteNova(ctx, k, r3) {
         if (esp && r3.length > 1 && (s.id === DESTINO || !M3.nav)) return;
         rotulos.push({
           ic: s.ic || "",
-          tx: rotuloCurto(s.nome),
+          tx: rotuloCurto(s),
           x: cx,
           y: cy,
           larg: larg,
@@ -1774,7 +1793,7 @@ function desenharRota3(ctx, r3, passo, k, rotulos) {
     ctx.fill();
     if (ps)
       rotulos.push({
-        tx: rotuloCurto(ps.nome),
+        tx: rotuloCurto(ps),
         x: tp.x,
         y: tp.y - 22 * DPR3,
         pri: 10,
@@ -2395,33 +2414,49 @@ function definirOrigem(id) {
     atualizar3D();
     enquadrar3D(true);
   }
-  toastMapa("📍 Você está em: " + rotuloCurto(s.nome));
+  toastMapa("📍 Você está em: " + rotuloCurto(s));
 }
 function ondeEstou() {
   var grupos = [
-    ["Entradas", ["entrada", "acessoOtonis", "estacionamento"]],
     [
-      "Térreo — o que você vê perto de você?",
+      "Pavimento Térreo — onde você está?",
       [
-        "hall",
+        "recepcao",
         "secretaria",
-        "sanhall",
-        "sanmasc",
-        "refeitorio",
-        "cantina",
-        "recreacao",
+        "nucleo_tic",
+        "coordenacao_pedagogica",
+        "sala_professores",
         "auditorio",
-        "areacoberta",
-        "quadra",
-        "saladocente",
-        "labmaq",
+        "sanitarios_terreo",
+        "refeitorio",
+        "area_de_convivencia",
+        "quadra_poliesportiva",
       ],
     ],
-    ["Pavimento superior", ["leitura", "biblioteca", "saladesenho", "sa1"]],
-    ["Subsolo", ["lab17", "lab19"]],
+    [
+      "Pavimento Superior",
+      ["biblioteca", "sala_de_aula_1", "sala_de_aula_2", "sala_de_aula_3"],
+    ],
+    [
+      "Subsolo 1 — Laboratórios",
+      [
+        "L1_laboratorio_automacao",
+        "L2_ensaios_conectividade_simulacoes",
+        "L3_eletronica_potencia",
+        "L4_eletricidade",
+        "L5_conectividade",
+        "L6_eletronica_digital",
+        "L7_informatica_1",
+        "L8_informatica_2",
+        "L9_redes",
+        "L10_manufatura",
+        "L18_laboratorio_automacao_industrial",
+        "saida_para_rampa",
+      ],
+    ],
   ];
   var h =
-    '<p class="nota" style="margin:0 0 10px">Clique no lugar onde você está (ou no mais perto). Dica: o número da sala fica na placa ao lado da porta.</p>';
+    '<p class="nota" style="margin:0 0 10px">Clique no lugar onde você está (ou no mais perto). Dica: o código da porta (ex.: L1, L7) fica na placa ao lado da entrada.</p>';
   grupos.forEach(function (g) {
     var ls = g[1].map(sala).filter(Boolean);
     if (!ls.length) return;
@@ -2438,15 +2473,17 @@ function ondeEstou() {
             esc(s.id) +
             '"><span>' +
             (s.ic ||
-              (s.tipo === "lab"
+              (s.tipo === "lab" || s.tipo === "laboratorio"
                 ? "🔬"
-                : s.tipo === "sala"
+                : s.tipo === "sala" || s.tipo === "sala_de_aula"
                   ? "🎓"
-                  : s.tipo === "adm"
+                  : s.tipo === "adm" ||
+                      s.tipo === "administrativo" ||
+                      s.tipo === "administrativo_tecnico"
                     ? "🗂️"
                     : "📍")) +
             "</span>" +
-            esc(rotuloCurto(s.nome)) +
+            esc(rotuloCurto(s)) +
             "</button>"
           );
         })

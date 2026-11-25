@@ -19,17 +19,27 @@ export function respondToLocalRoomIntent(message) {
   const room = findExactSala(roomQuery);
   if (!room) return null;
 
+  const floorLabel = formatFloorLocation(room.andar);
   const location = [
     room.bloco && `no ${room.bloco}`,
-    Number.isFinite(room.andar) && `no ${room.andar}º andar`,
+    floorLabel,
   ].filter(Boolean);
   const details = location.length ? ` fica ${location.join(", ")}` : "";
   const reference = room.dica ? ` ${room.dica}` : "";
+  const roomTitle = room.codigo_porta ? `${room.nome} (${room.codigo_porta})` : room.nome;
 
   return {
-    message: `${room.nome}${details}.${reference}`.trim(),
+    message: `${roomTitle}${details}.${reference}`.trim(),
     action: { type: "NAVIGATE_TO_ROOM", roomId: room.id },
   };
+}
+
+function formatFloorLocation(andar) {
+  if (!Number.isFinite(andar)) return null;
+  if (andar === -1) return "no subsolo 1 (laboratórios)";
+  if (andar === 0) return "no pavimento térreo";
+  if (andar === 1) return "no pavimento superior";
+  return `no ${andar}º andar`;
 }
 
 function normalizeText(value) {

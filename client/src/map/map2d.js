@@ -50,7 +50,7 @@ function rotaRede(de, para) {
     if (!A || !B) return;
     var d = Math.hypot(A[0] - B[0], A[1] - B[1]);
     if ((A[3] || 0) !== (B[3] || 0)) {
-      var el = /^elev/.test(a[0]) || /^elev/.test(a[1]);
+      var el = /^(elev|plataforma)/.test(a[0]) || /^(elev|plataforma)/.test(a[1]);
       d = el ? (CFG.acessivel ? 40 : 160) : CFG.acessivel ? 1e6 : 90;
     }
     viz[a[0]].push([a[1], d]);
@@ -517,26 +517,33 @@ function desenharPlanta(m, claro) {
       }),
     );
   });
-  var R = D.rede;
+  var R = D.rede,
+    A_ = andarAtivo();
   R.arestas.forEach(function (a) {
     var A = R.nos[a[0]],
       B = R.nos[a[1]];
-    if (A && B)
-      m.appendChild(
-        svgEl("line", {
-          x1: A[0],
-          y1: A[1],
-          x2: B[0],
-          y2: B[1],
-          stroke: claro ? "#c7dcd9" : "#16313c",
-          "stroke-width": 16,
-          "stroke-linecap": "round",
-        }),
-      );
+    if (!A || !B) return;
+    var a0 = +A[3] || 0,
+      b0 = +B[3] || 0;
+    if (a0 !== b0) return;
+    if (a0 !== A_ && !(A_ !== 0 && a0 === 0)) return;
+    m.appendChild(
+      svgEl("line", {
+        x1: A[0],
+        y1: A[1],
+        x2: B[0],
+        y2: B[1],
+        stroke: claro ? "#c7dcd9" : "#16313c",
+        "stroke-width": 16,
+        "stroke-linecap": "round",
+        opacity: a0 === A_ ? 1 : 0.25,
+      }),
+    );
   });
   Object.keys(R.nos).forEach(function (k) {
+    var n = R.nos[k];
+    if ((+n[3] || 0) !== A_) return;
     if (/^escada/.test(k)) {
-      var n = R.nos[k];
       m.appendChild(
         svgEl("rect", {
           x: n[0] - 11,
@@ -556,6 +563,31 @@ function desenharPlanta(m, claro) {
           stroke: "var(--tx2)",
           "stroke-width": 2,
         }),
+      );
+    } else if (/^plataforma/.test(k)) {
+      m.appendChild(
+        svgEl("rect", {
+          x: n[0] - 11,
+          y: n[1] - 11,
+          width: 22,
+          height: 22,
+          rx: 5,
+          fill: "var(--card2)",
+          stroke: "var(--pri)",
+          "stroke-width": 2,
+        }),
+      );
+      m.appendChild(
+        svgEl(
+          "text",
+          {
+            x: n[0],
+            y: n[1] + 4,
+            "text-anchor": "middle",
+            "font-size": 12,
+          },
+          "♿",
+        ),
       );
     }
   });
@@ -607,7 +639,7 @@ function desenharSalasPlanta(m, claro) {
       }),
     );
     if (ativo) {
-      var curta = rotuloCurto(s.nome),
+      var curta = rotuloCurto(s),
         vert = s.r[3] > s.r[2] * 1.25 && s.r[2] < 90,
         lado = vert ? s.r[3] : s.r[2],
         fs = Math.max(9, Math.min(15, lado / 8)),
@@ -692,32 +724,33 @@ function desenharSalasPlanta(m, claro) {
   });
 }
 function rotuloCurto(n) {
-  n = n
-    .replace("Laboratório de Informática", "Lab. Informática")
-    .replace("Laboratório de ", "Lab. ")
-    .replace("Oficina de ", "Of. ")
-    .replace(/ — .*$/, "")
-    .replace(/ \(.*\)$/, "");
-  n = n.replace(/^Laboratório (\d+)$/, "Lab. $1");
-  n = n
-    .replace(
-      "Lab. de Manufatura Integrada por Computador",
-      "Manufatura Integrada",
-    )
-    .replace("Laboratório 19", "Lab. 19")
-    .replace("Laboratórios de Máquinas", "Labs. de Máquinas")
-    .replace("Apoio Técnico Pedagógico", "Apoio Téc. Pedagógico")
-    .replace("Sala Docente", "Sala Docente")
-    .replace("Orientação Educacional", "Orient. Educ.")
-    .replace("Coordenação de Estágio", "Coord. Estágio")
-    .replace("Coordenação Técnica", "Coord. Técnica");
-  n = n
-    .replace("Eletrônica ", "Eletr. ")
-    .replace("Pneumática e Hidráulica", "Pneum./Hidr.")
-    .replace("Sistemas Embarcados", "Embarcados")
-    .replace("Recepção e Secretaria", "Recepção/Secretaria")
-    .replace("Biblioteca e Sala de Leitura", "Biblioteca");
-  return n;
+  var obj = n && typeof n === "object" ? n : null;
+  var cod = obj && obj.codigo_porta ? obj.codigo_porta : "";
+  var txt = String(obj ? obj.nome : n || "");
+  if (cod) {
+    var suf = txt
+      .replace(/^Laborat[óo]rio\s+(?:de\s+)?/i, "")
+      .replace(new RegExp("^" + cod + "\\s*", "i"), "")
+      .replace(/\s*\([^)]*\)$/, "")
+      .replace("ENSAIOS DE CONECTIVIDADE E SIMULAÇÕES", "Ensaios Conect.")
+      .replace("ELETRÔNICA DE POTÊNCIA", "Eletr. Potência")
+      .replace("ELETRÔNICA DIGITAL", "Eletr. Digital")
+      .replace("MANUFATURA INTEGRADA", "Manufatura")
+      .replace("CONECTIVIDADE", "Conectividade")
+      .replace("ELETRICIDADE", "Eletricidade")
+      .replace("INFORMÁTICA ", "Info ")
+      .replace("REDES", "Redes")
+      .replace("Automação", "Automação");
+    return cod + " · " + suf;
+  }
+  txt = txt
+    .replace("Sala de Coordenação Pedagógica e Técnica", "Coord. Pedagógica")
+    .replace("Núcleo TIC com Ênfase em Conectividade", "Núcleo TIC")
+    .replace("Sala dos Professores", "Sala Professores")
+    .replace("Quadra Poliesportiva", "Quadra")
+    .replace("ÁREA DE CONVIVÊNCIA", "Área Convivência")
+    .replace("SAÍDA PARA RAMPA", "Saída Rampa");
+  return txt;
 }
 function renderAndares() {
   var as = {};
@@ -758,15 +791,16 @@ function renderAndares() {
     });
   if (typeof atualizarControlesAndar === "function") atualizarControlesAndar();
   var sel = $("selDe");
-  sel.innerHTML = D.salas
+  $("selDe").innerHTML = D.salas
     .map(function (s) {
+      var label = (s.codigo_porta ? s.codigo_porta + " · " : "") + s.nome;
       return (
         '<option value="' +
         esc(s.id) +
         '"' +
         (s.id === CFG.de ? " selected" : "") +
         ">" +
-        esc(s.nome) +
+        esc(label) +
         "</option>"
       );
     })
@@ -1030,20 +1064,25 @@ $("buscaSala").oninput = function () {
   }
   var r = D.salas
     .filter(function (s) {
-      return norm(s.nome).indexOf(q) >= 0;
+      return (
+        norm(s.nome).indexOf(q) >= 0 ||
+        (s.codigo_porta && norm(s.codigo_porta).indexOf(q) >= 0) ||
+        norm(s.apelidos).indexOf(q) >= 0
+      );
     })
     .slice(0, 8);
   $("resBusca").innerHTML = r.length
     ? r
         .map(function (s) {
           var b = bloco(s.bloco);
+          var label = (s.codigo_porta ? s.codigo_porta + " · " : "") + s.nome;
           return (
             '<button class="item" data-s="' +
             esc(s.id) +
             '"><span class="cor" style="background:' +
             (b ? b.cor : "#9cb8bd") +
             '"></span><span class="tt">' +
-            esc(s.nome) +
+            esc(label) +
             "</span>" +
             icone("pino") +
             "</button>"

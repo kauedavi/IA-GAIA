@@ -173,6 +173,86 @@ if (D.versao < 6) {
     localStorage.setItem("gaia_dados", JSON.stringify(D));
   } catch (e) {}
 }
+// 2.0: nomenclatura oficial (mapa_escola.json), hierarquia de pavimentos (-1, 0, 1) e grafo multi-pavimento.
+if (D.versao < 7) {
+  var EX7 = exemplo();
+  var MAP7 = {
+    entrada: "recepcao",
+    hall: "recepcao",
+    diretoria: "nucleo_tic",
+    coordtec: "coordenacao_pedagogica",
+    apoiopedag: "coordenacao_pedagogica",
+    coordestagio: "coordenacao_pedagogica",
+    orientacao: "coordenacao_pedagogica",
+    seguranca: "recepcao",
+    saladocente: "sala_professores",
+    sanhall: "sanitarios_terreo",
+    sanmasc: "sanitarios_terreo",
+    sanfem: "sanitarios_terreo",
+    sanpne: "sanitarios_terreo",
+    cantina: "refeitorio",
+    recreacao: "area_de_convivencia",
+    areacoberta: "area_de_convivencia",
+    quadra: "quadra_poliesportiva",
+    vestiarios: "sanitarios_terreo",
+    vestsub: "sanitarios_terreo",
+    leitura: "biblioteca",
+    sa1: "sala_de_aula_1",
+    sa2: "sala_de_aula_2",
+    sa3: "sala_de_aula_3",
+    labprojman: "L10_manufatura",
+    labprojetos: "L3_eletronica_potencia",
+    labhidpneu: "L18_laboratorio_automacao_industrial",
+    labcomandos: "L4_eletricidade",
+    labeletronica: "L3_eletronica_potencia",
+    labmicro: "L6_eletronica_digital",
+    labsoftware: "L7_informatica_1",
+    labmetrologia: "L2_ensaios_conectividade_simulacoes",
+    labmaq: "L1_laboratorio_automacao",
+    labcadcam: "L5_conectividade",
+    labrobotica: "L7_informatica_1",
+    labmanuf: "L10_manufatura",
+    labei1: "L1_laboratorio_automacao",
+    labei2: "L2_ensaios_conectividade_simulacoes",
+    saladesenho: "sala_de_aula_3",
+    lab16: "L6_eletronica_digital",
+    lab17: "L7_informatica_1",
+    lab18: "L18_laboratorio_automacao_industrial",
+    lab19: "L18_laboratorio_automacao_industrial",
+    labinstel: "L4_eletricidade",
+    labmetro2: "L2_ensaios_conectividade_simulacoes",
+    almox: "L10_manufatura",
+    acessoOtonis: "recepcao",
+    estacionamento: "recepcao",
+  };
+  var mapearId7 = function (id) {
+    return MAP7[id] || id;
+  };
+  var idsOficiais = {};
+  EX7.salas.forEach(function (s) {
+    idsOficiais[s.id] = 1;
+  });
+  var extras = D.salas.filter(function (s) {
+    return !MAP7[s.id] && !idsOficiais[s.id];
+  });
+  D.salas = EX7.salas.concat(extras);
+  D.blocos = EX7.blocos;
+  D.rede = EX7.rede;
+  D.ruas = EX7.ruas;
+  D.cena = EX7.cena;
+  D.info = EX7.info;
+  D.mapaFonte = EX7.mapaFonte;
+  D.aulas.forEach(function (a) {
+    a.sala = mapearId7(a.sala);
+  });
+  (D.agenda || []).forEach(function (e) {
+    e.sala = mapearId7(e.sala);
+  });
+  D.versao = 7;
+  try {
+    localStorage.setItem("gaia_dados", JSON.stringify(D));
+  } catch (e) {}
+}
 var CFG;
 try {
   CFG = JSON.parse(lerLS("gaia_cfg", "{}")) || {};
@@ -186,7 +266,11 @@ if (CFG.acessivel === undefined) CFG.acessivel = false;
 if (CFG.navVoz === undefined) CFG.navVoz = false;
 if (CFG.som === undefined) CFG.som = false;
 if (!CFG.de || !sala(CFG.de))
-  CFG.de = sala("entrada") ? "entrada" : (D.salas[0] || {}).id;
+  CFG.de = sala("recepcao")
+    ? "recepcao"
+    : sala("entrada")
+      ? "entrada"
+      : (D.salas[0] || {}).id;
 if (CFG.lembrete === undefined) CFG.lembrete = 10;
 function salvar() {
   if (!gravarLS("gaia_dados", JSON.stringify(D)))

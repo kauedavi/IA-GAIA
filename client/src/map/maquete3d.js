@@ -35,13 +35,22 @@ cor3=function(){var k=cor3Base();if(k.il)return k;var c=k.claro;
   return k};
 
 // ── tipo visual de cada sala (só para escolher piso e móveis) ──
-var IL_INFO=/^(labprojman|labprojetos|labsoftware|labmicro|labcadcam|labeletronica|labei\d|lab1[678])$/;
+var IL_INFO=/^(L5_conectividade|L6_eletronica_digital|L7_informatica_1|L8_informatica_2|L9_redes)$/;
 function tipoIl(s){var id=s.id;
-  if(id==="quadra")return "quadra";if(id==="areacoberta")return "coberta";if(id==="hall")return "hall";if(id==="auditorio")return "audit";
-  if(id==="refeitorio")return "refeit";if(id==="cantina")return "cantina";if(id==="biblioteca"||id==="leitura")return "biblio";if(id==="almox")return "almox";
-  if(/^san/.test(id))return "banh";if(/^vest/.test(id))return "vest";
-  if(s.tipo==="sala")return "aula";if(s.tipo==="lab"||s.tipo==="oficina")return IL_INFO.test(id)?"info":"oficina";
-  if(s.tipo==="adm")return "adm";return "aula"}
+  if(id==="quadra"||id==="quadra_poliesportiva")return "quadra";
+  if(id==="area_de_convivencia"||id==="areacoberta")return "coberta";
+  if(id==="recepcao"||id==="hall")return "hall";
+  if(id==="auditorio")return "audit";
+  if(id==="refeitorio")return "refeit";
+  if(id==="cantina")return "cantina";
+  if(id==="biblioteca"||id==="leitura")return "biblio";
+  if(id==="almox"||id==="saida_para_rampa")return "almox";
+  if(/^san/.test(id)||s.tipo==="sanitario")return "banh";
+  if(/^vest/.test(id))return "vest";
+  if(s.tipo==="sala"||s.tipo==="sala_de_aula")return "aula";
+  if(s.tipo==="lab"||s.tipo==="laboratorio"||s.tipo==="oficina")return IL_INFO.test(id)?"info":"oficina";
+  if(s.tipo==="adm"||s.tipo==="administrativo"||s.tipo==="administrativo_tecnico")return "adm";
+  return "aula"}
 function hash3(t){var h=0;t=String(t);for(var i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;return Math.abs(h)}
 
 // ── paredes: trechos curtos (para a ordem de desenho ficar certa), porta do lado do corredor, janelas onde não há outra sala ──
@@ -112,9 +121,13 @@ function salaMaquete(ctx,k,s,z,est){
     for(var x=rr[0]+12;x<rr[0]+rr[2];x+=12){var a=P3(x,rr[1],z+0.5),b=P3(x,rr[1]+rr[3],z+0.5);ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)}
     for(var y=rr[1]+12;y<rr[1]+rr[3];y+=12){var a2=P3(rr[0],y,z+0.5),b2=P3(rr[0]+rr[2],y,z+0.5);ctx.moveTo(a2.x,a2.y);ctx.lineTo(b2.x,b2.y)}ctx.stroke()}
   var itens=[];
-  if(t==="coberta"){ // área coberta: pilares e mesas, sem paredes
-    for(var px=rr[0]+6;px<=rr[0]+rr[2]-6;px+=(rr[2]-12)/3)for(var py=rr[1]+6;py<=rr[1]+rr[3]-6;py+=(rr[3]-12)/5)itens.push({r:[px-3,py-3,6,6],z0:0,z1:24,c:"coluna"});
-    if(det>0.22)for(var my=rr[1]+30;my+20<rr[1]+rr[3];my+=60)for(var mx=rr[0]+30;mx+26<rr[0]+rr[2];mx+=62){itens.push({r:[mx,my,26,9],z0:0,z1:6,c:"madeira"});itens.push({r:[mx,my-5,26,3],z0:0,z1:3.5,c:"cadVd"});itens.push({r:[mx,my+11,26,3],z0:0,z1:3.5,c:"cadVd"})}}
+  if(t==="coberta"){ // área de convivência externa: piso verde, mesas com guarda-sóis brancos e canteiros
+    chao3(ctx,retPts(rr),z+0.45,il.grama,il.grama2,1);
+    for(var px=rr[0]+14;px<=rr[0]+rr[2]-14;px+=(rr[2]-28)/3)for(var py=rr[1]+16;py<=rr[1]+rr[3]-16;py+=(rr[3]-32)/4){
+      itens.push({r:[px-5,py-5,10,10],z0:0,z1:5,c:"mesa"});
+      itens.push({r:[px-1,py-1,2,2],z0:5,z1:14,c:"coluna"});
+      itens.push({r:[px-10,py-10,20,20],z0:14,z1:16,c:"quadro"})}
+    if(det>0.22){itens.push({r:[rr[0]+6,rr[1]+6,14,rr[3]-12],z0:0,z1:4,c:"planta"});itens.push({r:[rr[0]+rr[2]-20,rr[1]+6,14,rr[3]-12],z0:0,z1:4,c:"planta"})}}
   else{paredesDe(s).forEach(function(p){itens.push({par:p})});if(det>0.22)itens=itens.concat(moveisDe(s))}
   itens.forEach(function(it){var r=it.r||it.par.r;it.d=proj3(r[0]+r[2]/2,r[1]+r[3]/2,z).d});
   itens.sort(function(p,q){return p.d-q.d});
@@ -140,15 +153,14 @@ function chaoTerreo3(ctx,k,z,todos){var C=cena3(),il=k.il;
   else chao3(ctx,[[20,115],[980,115],[980,1115],[20,1115]],z,k.chao,null);
   (C.verdes||[]).forEach(function(v){chao3(ctx,v,z+0.2,il.grama,il.grama2,1)});
   ctx.globalAlpha=al;
+  (C.estacionamentos||[]).forEach(function(r,idx){chao3(ctx,retPts(r),z+0.3,il.asfalto,null);
+    ctx.strokeStyle="rgba(255,255,255,.8)";ctx.lineWidth=Math.max(1,1.4*M3.s)*DPR3;ctx.beginPath();
+    for(var xx=r[0]+12;xx<r[0]+r[2]-8;xx+=26){var p0=P3(xx,r[1]+6,z+0.4),p1=P3(xx,r[1]+34,z+0.4);ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y)}ctx.stroke();
+    if(M3.s>0.22)for(var x2=r[0]+12,n=0;x2+26<r[0]+r[2]-8;x2+=26,n++){var hh=hash3("est"+idx+n);if(hh%3===0)continue;var cc=k.il.m["carro"+(1+hh%4)];
+      caixa3(ctx,[x2+4,r[1]+8,18,25],z,z+5,cc[0],cc[1],cc[2],null,0);caixa3(ctx,[x2+6,r[1]+14,14,11],z+5,z+9,mix3(cc[0],"#9fd0ff",0.5),cc[1],cc[2],null,0)}});
   D.blocos.forEach(function(b){var r=[b.x,b.y,b.w,b.h];
-    if(/^est/.test(b.id)){chao3(ctx,retPts(r),z+0.3,il.asfalto,null);
-      ctx.strokeStyle="rgba(255,255,255,.8)";ctx.lineWidth=Math.max(1,1.4*M3.s)*DPR3;ctx.beginPath();
-      for(var xx=b.x+12;xx<b.x+b.w-8;xx+=26){var p0=P3(xx,b.y+6,z+0.4),p1=P3(xx,b.y+34,z+0.4);ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y)}ctx.stroke();
-      if(M3.s>0.22)for(var x2=b.x+12,n=0;x2+26<b.x+b.w-8;x2+=26,n++){var hh=hash3(b.id+n);if(hh%3===0)continue;var cc=k.il.m["carro"+(1+hh%4)];
-        caixa3(ctx,[x2+4,b.y+8,18,25],z,z+5,cc[0],cc[1],cc[2],null,0);caixa3(ctx,[x2+6,b.y+14,14,11],z+5,z+9,mix3(cc[0],"#9fd0ff",0.5),cc[1],cc[2],null,0)}}
-    else if(b.id==="quadra"){quadra3(ctx,k,r,z)}
-    else if(b.id==="recre"){chao3(ctx,retPts(r),z+0.3,k.claro?"#e3d9c6":"#3d3a33",null)}
-    else if(b.id==="pisc"){}
+    if(b.id==="quadra"){quadra3(ctx,k,r,z)}
+    else if(b.id==="patio"||b.id==="recre"||b.id==="pisc"){chao3(ctx,retPts(r),z+0.3,il.grama,il.grama2,1)}
     else{chao3(ctx,retPts(r),z+0.3,il.circ,null);
       if(M3.s>0.5){ctx.strokeStyle=il.circLinha;ctx.lineWidth=0.8*DPR3;ctx.beginPath();
         for(var x=b.x+20;x<b.x+b.w;x+=20){var a=P3(x,b.y,z+0.35),c2=P3(x,b.y+b.h,z+0.35);ctx.moveTo(a.x,a.y);ctx.lineTo(c2.x,c2.y)}

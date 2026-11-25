@@ -165,7 +165,7 @@ function renderUnidade() {
     abrirUrl(I.mapa);
   };
   $("uMapa").onclick = function () {
-    mostrarRota("secretaria");
+    mostrarRota("recepcao");
   };
   $("infoUnidade")
     .querySelectorAll("[data-tel]")

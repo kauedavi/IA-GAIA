@@ -29,8 +29,26 @@ function novoId(p) {
   );
 }
 function sala(id) {
+  if (!id) return null;
+  var chave = String(id).trim();
   for (var i = 0; i < D.salas.length; i++)
-    if (D.salas[i].id === id) return D.salas[i];
+    if (D.salas[i].id === chave) return D.salas[i];
+  var alvo = norm(chave).replace(/\blaboratorio\b/g, "lab").replace(/\s+/g, "");
+  var labNum = alvo.match(/^(?:l|lab)0*(\d+)$/);
+  var salaNum = alvo.match(/^sala(?:deaula)?0*(\d+)$/);
+  for (var j = 0; j < D.salas.length; j++) {
+    var s = D.salas[j];
+    if (s.codigo_porta && norm(s.codigo_porta).replace(/\s+/g, "") === alvo)
+      return s;
+    if (norm(s.nome).replace(/\s+/g, "") === alvo) return s;
+    if (
+      labNum &&
+      s.codigo_porta &&
+      norm(s.codigo_porta).replace(/\s+/g, "") === "l" + labNum[1]
+    )
+      return s;
+    if (salaNum && s.id === "sala_de_aula_" + salaNum[1]) return s;
+  }
   return null;
 }
 function bloco(id) {
@@ -41,10 +59,10 @@ function bloco(id) {
 function nomeAndar(a) {
   a = +a || 0;
   return a === 0
-    ? "térreo"
+    ? "pavimento térreo"
     : a < 0
-      ? "subsolo"
-      : D && D.rede && a === 1
+      ? "subsolo 1 (laboratórios)"
+      : a === 1
         ? "pavimento superior"
         : a + "º andar";
 }

@@ -469,7 +469,7 @@ function renderAgora() {
       esc(D.unidade) +
       '</div><div class="ds">' +
       esc(rec.t ? rec.t + ": " + rec.h : "") +
-      '</div></div><button class="botao peq" onclick="mostrarRota(\'secretaria\')">Recepção</button></div>';
+      '</div></div><button class="botao peq" onclick="mostrarRota(\'recepcao\')">Recepção</button></div>';
   } else {
     var ev = proximosEventos(1)[0];
     if (ev)
@@ -676,6 +676,7 @@ function contexto() {
   var salas = D.salas.map(function (x) {
     return {
       id: x.id,
+      codigo_porta: x.codigo_porta || null,
       nome: x.nome,
       onde: ondeFica(x),
       tipo: TIPOS[x.tipo] || x.tipo,
@@ -916,10 +917,12 @@ function acharSala(q) {
   var nq = " " + norm(q) + " ",
     melhor = null,
     mp = 0;
-  // número de sala ("sala 201", "201")
+  var labMatch = nq.match(/\b(?:l|lab|laboratorio)\s*0*(\d{1,2})\b/);
+  var salaMatch = nq.match(/\bsala(?:\s+de\s+aula)?\s*0*(\d{1,2})\b/);
   var num = nq.match(/\b(\d{2,4})\b/);
   D.salas.forEach(function (s) {
     var nome = norm(s.nome),
+      cod = norm(s.codigo_porta || ""),
       pts = 0,
       ws = (nome + " " + norm(s.apelidos)).split(" ").filter(function (w) {
         return (
@@ -928,6 +931,10 @@ function acharSala(q) {
             "de",
             "da",
             "do",
+            "dos",
+            "das",
+            "com",
+            "para",
             "sala",
             "laboratorio",
             "oficina",
@@ -937,7 +944,10 @@ function acharSala(q) {
           ].indexOf(w) < 0
         );
       });
-    if (nq.indexOf(" " + nome + " ") >= 0) pts += 10;
+    if (cod && nq.indexOf(" " + cod + " ") >= 0) pts += 18;
+    if (labMatch && cod === "l" + labMatch[1]) pts += 18;
+    if (salaMatch && s.id === "sala_de_aula_" + salaMatch[1]) pts += 18;
+    if (nq.indexOf(" " + nome + " ") >= 0) pts += 12;
     ws.forEach(function (w) {
       if (
         nq.indexOf(" " + w + " ") >= 0 ||
@@ -945,8 +955,10 @@ function acharSala(q) {
       )
         pts += 2;
     });
-    if (num && nome.indexOf(num[1]) >= 0) pts += 8;
-    if (/\blab/.test(nq) && s.tipo === "lab") pts += 1;
+    if (num && (nome.indexOf(num[1]) >= 0 || cod === "l" + Number(num[1])))
+      pts += 8;
+    if (/\blab/.test(nq) && (s.tipo === "lab" || s.tipo === "laboratorio"))
+      pts += 1;
     var dn = nome.match(/\b(\d)\b/);
     if (dn && nq.indexOf(" " + dn[1] + " ") >= 0) pts += 3;
     if (pts > mp) {

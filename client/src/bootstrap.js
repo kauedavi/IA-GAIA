@@ -7,7 +7,7 @@ renderRota = function () {
     org = $("origemTx");
   if (org)
     org.textContent = de
-      ? rotuloCurto(de.nome) + (+de.andar ? " · " + nomeAndar(de.andar) : "")
+      ? rotuloCurto(de) + (+de.andar ? " · " + nomeAndar(de.andar) : "")
       : "—";
   if (!D.rede || PLANTA) return;
   if (!para) {

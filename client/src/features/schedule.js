@@ -139,13 +139,14 @@ $("fab").onclick = function () {
 function opcoesSalas(sel) {
   return D.salas
     .map(function (s) {
+      var label = (s.codigo_porta ? s.codigo_porta + " · " : "") + s.nome;
       return (
         '<option value="' +
         esc(s.id) +
         '"' +
         (s.id === sel ? " selected" : "") +
         ">" +
-        esc(s.nome) +
+        esc(label) +
         "</option>"
       );
     })

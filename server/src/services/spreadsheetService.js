@@ -213,19 +213,38 @@ export function getSalas() {
   return state.salas;
 }
 
-export function findExactSala(destino) {
-  const normalize = (value) => String(value || "")
+function normalizeSalaQuery(value) {
+  return String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
-  const query = normalize(destino);
+}
+
+function isExactSalaMatch(sala, query) {
+  if (normalizeSalaQuery(sala.id) === query || normalizeSalaQuery(sala.nome) === query) {
+    return true;
+  }
+  if (sala.codigo_porta && normalizeSalaQuery(sala.codigo_porta) === query) {
+    return true;
+  }
+  if (Array.isArray(sala.apelidos) && sala.apelidos.some((alias) => normalizeSalaQuery(alias) === query)) {
+    return true;
+  }
+  const compact = query.replace(/\s+/g, "");
+  const labCode = compact.match(/^(?:l|lab|laboratorio)0*(\d+)$/);
+  if (labCode && sala.codigo_porta && normalizeSalaQuery(sala.codigo_porta) === `l${labCode[1]}`) {
+    return true;
+  }
+  return false;
+}
+
+export function findExactSala(destino) {
+  const query = normalizeSalaQuery(destino);
   if (!query) return null;
 
-  const matches = (salas) => salas.filter((sala) =>
-    normalize(sala.id) === query || normalize(sala.nome) === query
-  );
+  const matches = (salas) => salas.filter((sala) => isExactSalaMatch(sala, query));
   const spreadsheetMatches = matches(state.salas);
   if (spreadsheetMatches.length) {
     return spreadsheetMatches.length === 1 ? spreadsheetMatches[0] : null;
@@ -236,23 +255,23 @@ export function findExactSala(destino) {
 }
 
 export function findSala(destino) {
-  const normalize = (value) => String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-  const query = normalize(destino);
+  const query = normalizeSalaQuery(destino);
+  if (!query) return null;
   const spreadsheetMatch = state.salas.find((item) =>
-    String(item.id).toLowerCase() === query ||
-    String(item.nome).toLowerCase().includes(query)
+    normalizeSalaQuery(item.id) === query ||
+    normalizeSalaQuery(item.nome).includes(query)
   );
   if (spreadsheetMatch) return spreadsheetMatch;
 
+  const exactFallback = fallbackSalas.find((item) => isExactSalaMatch(item, query));
+  if (exactFallback) return exactFallback;
+
   return fallbackSalas.find((item) =>
-    normalize(item.id) === query ||
-    normalize(item.nome).includes(query) ||
-    query.includes(normalize(item.id)) ||
-    (normalize(item.id) === "biblioteca" && ["biblioteca", "livros", "estudo"].some((alias) => query.includes(alias)))
+    normalizeSalaQuery(item.nome).includes(query) ||
+    (Array.isArray(item.apelidos) && item.apelidos.some((alias) => {
+      const normalizedAlias = normalizeSalaQuery(alias);
+      return normalizedAlias.length >= 4 && query.includes(normalizedAlias);
+    }))
   ) || null;
 }
 

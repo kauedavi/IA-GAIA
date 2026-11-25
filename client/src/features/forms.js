@@ -263,7 +263,7 @@ function editarSala(id, rasc) {
         .join("") +
       "</select></div>" +
       '<div class="campo"><label>Andar</label><select id="sAndar">' +
-      [0, 1, 2, 3]
+      [-1, 0, 1, 2, 3]
         .map(function (a) {
           return (
             '<option value="' +
@@ -271,7 +271,13 @@ function editarSala(id, rasc) {
             '"' +
             ((+s.andar || 0) === a ? " selected" : "") +
             ">" +
-            (a === 0 ? "Térreo" : a + "º andar") +
+            (a < 0
+              ? "Subsolo 1 (Laboratórios)"
+              : a === 0
+                ? "Pavimento Térreo"
+                : a === 1
+                  ? "Pavimento Superior"
+                  : a + "º andar") +
             "</option>"
           );
         })

@@ -1,0 +1,349 @@
+{
+  "projeto": "G.A.I.A. - Sistema de Navegação Indoor 2D/3D",
+  "unidade": "SENAI-SP (Rua Gandavo / Rua Dr. Mário Sérgio Cardim / Rua Tangará)",
+  "instrucoes_antigravity": {
+    "sistema_coordenadas": "Eixo X: Leste-Oeste (Rua Tangará -> Rua Dr. Neto de Araújo); Eixo Z: Norte-Sul (Rua Gandavo -> Rua Dr. Mário Sérgio Cardim); Eixo Y: Pavimentos (Subsolo 1 = -1, Térreo = 0, Superior = 1).",
+    "regra_nomenclatura": "Utilizar EXCLUSIVAMENTE os campos 'nome_oficial' e 'codigo_porta'. Ignorar nomes antigos da planta arquitetônica PDF.",
+    "logica_arquitetonica": "O edifício principal possui um corredor longo no eixo Leste-Oeste (bloco de laboratórios) conectado perpendicularmente ao eixo Norte-Sul (recepção, circulação central, refeitório e área externa)."
+  },
+  "pavimentos": [
+    {
+      "id": "pavimento_superior",
+      "nome_oficial": "Pavimento Superior (Bloco de Salas de Aula e Biblioteca)",
+      "elevacao_y": 1,
+      "corredores": [
+        {
+          "id": "corredor_superior_principal",
+          "nome": "Corredor Superior (Mezanino / Passarela)",
+          "caracteristicas": "Corredor retilíneo com guarda-corpo metálico e parede de vidro com vista para o vão central/pátio; piso tátil direcional.",
+          "sequencia_espacial_norte_sul": [
+            "escada_superior_norte",
+            "sala_de_aula_3",
+            "totem_azul_senai",
+            "bebedouros_superior",
+            "sala_de_aula_2",
+            "sala_de_aula_1",
+            "escada_superior_central_e_elevador",
+            "biblioteca"
+          ]
+        }
+      ],
+      "ambientes": [
+        {
+          "id": "escada_superior_norte",
+          "nome_oficial": "Escada de Acesso Norte (Pavimento Superior)",
+          "tipo": "transicao_vertical",
+          "conecta_com": ["corredor_superior_principal", "pavimento_terreo"],
+          "referencia_visual": "Extremidade do corredor superior, próxima à Sala de Aula 3, com hidrante e extintor."
+        },
+        {
+          "id": "sala_de_aula_3",
+          "nome_oficial": "SALA DE AULA 3",
+          "codigo_porta": null,
+          "tipo": "sala_de_aula",
+          "corredor_id": "corredor_superior_principal",
+          "posicao_relativa": "Extremidade do corredor, ao lado da escada norte."
+        },
+        {
+          "id": "sala_de_aula_2",
+          "nome_oficial": "SALA DE AULA 2",
+          "codigo_porta": null,
+          "tipo": "sala_de_aula",
+          "corredor_id": "corredor_superior_principal",
+          "posicao_relativa": "Entre o totem azul SENAI e a Sala de Aula 1; dois bebedouros metálicos fixados na parede externa imediatamente ao lado da porta."
+        },
+        {
+          "id": "sala_de_aula_1",
+          "nome_oficial": "SALA DE AULA 1",
+          "codigo_porta": null,
+          "tipo": "sala_de_aula",
+          "corredor_id": "corredor_superior_principal",
+          "posicao_relativa": "Entre a Sala de Aula 2 e o hall da escada central."
+        },
+        {
+          "id": "escada_superior_central",
+          "nome_oficial": "Escada Principal / Acesso Pav. Térreo",
+          "tipo": "transicao_vertical",
+          "conecta_com": ["corredor_superior_principal", "hall_recepcao_terreo"],
+          "sinalizacao": "Placa vermelha suspensa: 'Pav. Térreo: Laboratórios, Sanitários, Biblioteca'.",
+          "posicao_relativa": "Entre a Sala de Aula 1 e a Biblioteca."
+        },
+        {
+          "id": "biblioteca",
+          "nome_oficial": "BIBLIOTECA",
+          "codigo_porta": null,
+          "tipo": "biblioteca",
+          "corredor_id": "corredor_superior_principal",
+          "posicao_relativa": "Extremidade oposta do corredor superior, após o hall da escada central e estantes de madeira externas. Portas duplas de vidro com adesivo institucional SENAI."
+        }
+      ]
+    },
+    {
+      "id": "pavimento_terreo",
+      "nome_oficial": "Pavimento Térreo (Recepção, Administrativo, Refeitório e Área Externa)",
+      "elevacao_y": 0,
+      "corredores": [
+        {
+          "id": "hall_recepcao_terreo",
+          "nome": "Hall Principal / Recepção e Circulação Central",
+          "caracteristicas": "Piso claro com sinalização tátil em inox, catracas eletrônicas, painel digital SENAI, plataforma elevatória de acessibilidade (PCD) e escadarias em granito escuro.",
+          "sequencia_espacial": [
+            "recepcao",
+            "secretaria",
+            "catracas_acesso",
+            "plataforma_elevatoria_pcd",
+            "escada_descida_laboratorios_subsolo",
+            "corredor_administrativo_e_refeitorio"
+          ]
+        },
+        {
+          "id": "corredor_refeitorio_convivencia",
+          "nome": "Eixo Refeitório e Área Externa",
+          "caracteristicas": "Liga a circulação interna ao refeitório envidraçado e às portas de saída para a área aberta."
+        }
+      ],
+      "ambientes": [
+        {
+          "id": "recepcao",
+          "nome_oficial": "RECEPÇÃO",
+          "codigo_porta": null,
+          "tipo": "atendimento",
+          "corredor_id": "hall_recepcao_terreo",
+          "posicao_relativa": "Entrada principal do prédio, portas de vidro com adesivo vermelho 'RECEPÇÃO', balcão de madeira e totem digital."
+        },
+        {
+          "id": "secretaria",
+          "nome_oficial": "SECRETARIA",
+          "codigo_porta": null,
+          "tipo": "administrativo",
+          "corredor_id": "hall_recepcao_terreo",
+          "posicao_relativa": "Sala envidraçada adjacente à Recepção e próxima às catracas/escada central."
+        },
+        {
+          "id": "auditorio",
+          "nome_oficial": "Auditório",
+          "tipo": "auditorio",
+          "sinalizacao": "Indicado no totem direcional vermelho (seta à esquerda/mesmo nível após catracas)."
+        },
+        {
+          "id": "sala_professores",
+          "nome_oficial": "Sala dos Professores",
+          "tipo": "administrativo",
+          "sinalizacao": "Indicado no totem direcional vermelho junto ao Auditório e Coordenação."
+        },
+        {
+          "id": "coordenacao_pedagogica",
+          "nome_oficial": "Sala de Coordenação Pedagógica e Técnica",
+          "tipo": "administrativo",
+          "sinalizacao": "Indicado no totem direcional vermelho (acesso pelo eixo central/inferior)."
+        },
+        {
+          "id": "nucleo_tic",
+          "nome_oficial": "Núcleo TIC com Ênfase em Conectividade",
+          "tipo": "administrativo_tecnico",
+          "sinalizacao": "Indicado no totem direcional vermelho."
+        },
+        {
+          "id": "sanitarios_terreo",
+          "nome_oficial": "Sanitários",
+          "tipo": "sanitario",
+          "corredor_id": "corredor_refeitorio_convivencia",
+          "posicao_relativa": "Corredor de acesso ao Refeitório (placas vermelhas com pictograma feminino/masculino/PCD e bebedouros próximos à escada)."
+        },
+        {
+          "id": "refeitorio",
+          "nome_oficial": "Refeitório",
+          "codigo_porta": null,
+          "tipo": "alimentacao",
+          "corredor_id": "corredor_refeitorio_convivencia",
+          "caracteristicas": "Salão amplo com mesas brancas, pilares de concreto, bancada com 5 micro-ondas embutidos e paredes de vidro com portas de saída para o pátio."
+        },
+        {
+          "id": "area_de_convivencia",
+          "nome_oficial": "ÁREA DE CONVIVÊNCIA",
+          "codigo_porta": null,
+          "tipo": "area_externa",
+          "corredor_id": "corredor_refeitorio_convivencia",
+          "posicao_relativa": "Pátio externo acessível pelas portas de vidro do Refeitório; possui piso verde, mesas com guarda-sóis brancos e canteiros."
+        },
+        {
+          "id": "quadra_poliesportiva",
+          "nome_oficial": "Quadra Poliesportiva",
+          "codigo_porta": null,
+          "tipo": "esporte",
+          "corredor_id": "corredor_refeitorio_convivencia",
+          "posicao_relativa": "Área externa adjacente à Área de Convivência (acesso direto pela saída sinalizada do Refeitório)."
+        }
+      ]
+    },
+    {
+      "id": "pavimento_laboratorios_subsolo_1",
+      "nome_oficial": "LABORATÓRIOS - TÉRREO / SUBSOLO 1",
+      "elevacao_y": -1,
+      "corredores": [
+        {
+          "id": "corredor_laboratorios_principal",
+          "nome": "Corredor Principal dos Laboratórios (Eixo Leste-Oeste)",
+          "caracteristicas": "Corredor longo com divisórias de vidro adesivadas com circuitos, forro ripado de madeira na lateral direita, armários cinzas (lockers) numerados e piso tátil metálico em toda a extensão.",
+          "sequencia_espacial_oeste_leste": [
+            "escada_acesso_laboratorios",
+            "L1_laboratorio_automacao",
+            "L2_ensaios_conectividade_simulacoes",
+            "L3_eletronica_potencia",
+            "L4_eletricidade",
+            "saida_rampa_emergencia_oeste",
+            "L5_conectividade",
+            "L6_eletronica_digital",
+            "L7_informatica_1",
+            "L8_informatica_2",
+            "L9_redes",
+            "L10_manufatura",
+            "L18_laboratorio_automacao_industrial"
+          ]
+        }
+      ],
+      "ambientes": [
+        {
+          "id": "escada_acesso_laboratorios",
+          "nome_oficial": "Escada de Acesso aos Laboratórios (Térreo/Subsolo 1)",
+          "tipo": "transicao_vertical",
+          "conecta_com": ["hall_recepcao_terreo", "corredor_laboratorios_principal"],
+          "sinalizacao": "Placa na pilastra da base: 'LABORATÓRIOS - TÉRREO / SUBSOLO 1'."
+        },
+        {
+          "id": "L1_laboratorio_automacao",
+          "nome_oficial": "Laboratório de Automação",
+          "codigo_porta": "L1",
+          "tipo": "laboratorio",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Primeiro laboratório à direita ao descer a escada principal."
+        },
+        {
+          "id": "L2_ensaios_conectividade_simulacoes",
+          "nome_oficial": "LABORATÓRIO DE ENSAIOS DE CONECTIVIDADE E SIMULAÇÕES",
+          "codigo_porta": "L2",
+          "tipo": "laboratorio",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Logo após o L1, no mesmo alinhamento."
+        },
+        {
+          "id": "L3_eletronica_potencia",
+          "nome_oficial": "LABORATÓRIO DE ELETRÔNICA DE POTÊNCIA",
+          "codigo_porta": "L3",
+          "tipo": "laboratorio",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Sequência após o L2 (mencionado no vídeo como Eletrônica 3 / L3)."
+        },
+        {
+          "id": "L4_eletricidade",
+          "nome_oficial": "LABORATÓRIO DE ELETRICIDADE",
+          "codigo_porta": "L4",
+          "tipo": "laboratorio",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Sequência após o L3."
+        },
+        {
+          "id": "L5_conectividade",
+          "nome_oficial": "LABORATÓRIO DE CONECTIVIDADE",
+          "codigo_porta": "L5",
+          "tipo": "laboratorio",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Sequência após o L4."
+        },
+        {
+          "id": "L6_eletronica_digital",
+          "nome_oficial": "LABORATÓRIO DE ELETRÔNICA DIGITAL",
+          "codigo_porta": "L6",
+          "tipo": "laboratorio",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Sequência após o L5."
+        },
+        {
+          "id": "L7_informatica_1",
+          "nome_oficial": "LABORATÓRIO DE INFORMÁTICA 1",
+          "codigo_porta": "L7",
+          "tipo": "laboratorio",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Sequência após o L6."
+        },
+        {
+          "id": "L8_informatica_2",
+          "nome_oficial": "LABORATÓRIO DE INFORMÁTICA 2",
+          "codigo_porta": "L8",
+          "tipo": "laboratorio",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Sequência após o L7."
+        },
+        {
+          "id": "L9_redes",
+          "nome_oficial": "LABORATÓRIO DE REDES",
+          "codigo_porta": "L9",
+          "tipo": "laboratorio",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Sequência após o L8."
+        },
+        {
+          "id": "L10_manufatura",
+          "nome_oficial": "LABORATÓRIO DE MANUFATURA INTEGRADA",
+          "codigo_porta": "L10",
+          "tipo": "laboratorio",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Sequência após o L9 (mencionado no vídeo como Laboratório de Manufatura)."
+        },
+        {
+          "id": "L18_laboratorio_automacao_industrial",
+          "nome_oficial": "Laboratório L18 (Bancadas Modulares / Pneumática e Automação)",
+          "codigo_porta": "L18",
+          "tipo": "laboratorio",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Ala de laboratórios modulares conectada ao corredor com sinalização 'SAÍDA PARA RAMPA'."
+        },
+        {
+          "id": "saida_para_rampa",
+          "nome_oficial": "SAÍDA PARA RAMPA",
+          "codigo_porta": null,
+          "tipo": "acesso_emergencia",
+          "corredor_id": "corredor_laboratorios_principal",
+          "posicao_relativa": "Extremidade do corredor dos laboratórios próxima ao L18, com hidrante vermelho e válvula amarela."
+        }
+      ]
+    }
+  ],
+  "conexoes_navegacao_grafo": [
+    {
+      "origem": "recepcao",
+      "destino": "hall_recepcao_terreo",
+      "tipo": "passagem_direta"
+    },
+    {
+      "origem": "hall_recepcao_terreo",
+      "destino": "escada_superior_central",
+      "tipo": "escada",
+      "descricao": "Subir escada principal do térreo para o pavimento superior (Salas de Aula 1, 2, 3 e Biblioteca)."
+    },
+    {
+      "origem": "hall_recepcao_terreo",
+      "destino": "escada_acesso_laboratorios",
+      "tipo": "escada",
+      "descricao": "Descer escada após as catracas/plataforma PCD para o corredor dos laboratórios (L1 a L10 / L18)."
+    },
+    {
+      "origem": "hall_recepcao_terreo",
+      "destino": "corredor_refeitorio_convivencia",
+      "tipo": "corredor",
+      "descricao": "Seguir pelo corredor lateral passando pelos sanitários e bebedouros até o Refeitório."
+    },
+    {
+      "origem": "refeitorio",
+      "destino": "area_de_convivencia",
+      "tipo": "porta_externa",
+      "descricao": "Sair pelas portas de vidro sinalizadas como 'Área de Convivência'."
+    },
+    {
+      "origem": "refeitorio",
+      "destino": "quadra_poliesportiva",
+      "tipo": "porta_externa",
+      "descricao": "Sair pelas portas de vidro sinalizadas como 'Quadra Poliesportiva'."
+    }
+  ]
+}

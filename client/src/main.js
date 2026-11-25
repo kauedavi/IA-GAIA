@@ -1,8 +1,9 @@
-import { GAIA_API_URL } from "./config.js";
+import { GAIA_API_URL, GAIA_SUPABASE } from "./config.js";
 import { requestChat } from "./features/chatStream.js";
 
 window.GAIA_API_URL = window.GAIA_API_URL || GAIA_API_URL;
 window.GAIA_CHAT_TRANSPORT = { request: requestChat };
+window.GAIA_SUPABASE = window.GAIA_SUPABASE || GAIA_SUPABASE;
 
 const modules = [
   "./platform/platform.js",
@@ -13,6 +14,7 @@ const modules = [
   "./map/map2d.js",
   "./features/schedule.js",
   "./features/forms.js",
+  "./features/supabaseAuth.js",
   "./features/auth.js",
   "./features/agenda.js",
   "./features/unit.js",

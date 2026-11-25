@@ -102,6 +102,7 @@ aplicarTema();
 aplicarAcessibilidade();
 setTimeout(ajustarVB, 50);
 iniciarSessao();
+if (typeof revalidarSessaoDaNuvem === "function") revalidarSessaoDaNuvem();
 setInterval(function () {
   if (telaAtual === "tGaia") renderAgora();
   if (telaAtual === "tHorarios") renderHorarios();

@@ -105,7 +105,7 @@ Respeite esta divisão:
 - `services/`: regras da aplicação e integração com Gemini ou planilha.
 - `agent/`: instrução de sistema e ferramentas de Function Calling.
 - `data/`: fallbacks isolados e dados estáticos.
-- `database/`: SQLite legado e scripts de manutenção.
+- `database/`: SQLite de horários, esquema e scripts de conferência (o `.db` é gerado, não versionado).
 - `middleware/`: enriquecimento da requisição, CORS e observabilidade.
 - `observability/`: preparação e sumarização de métricas.
 
@@ -151,13 +151,29 @@ Respeite esta divisão:
 
 ### SQLite
 
-SQLite é usado como persistência legada e em scripts de importação. Não o substitua por planilha ou Gemini dentro de um serviço sem necessidade clara.
+O SQLite guarda a grade de horários importada da planilha, em cinco tabelas (`turmas`, `disciplinas`, `professores`, `ambientes`, `horarios`). Ele **não** é a fonte que o app consulta: `agent/tools/horariosTool.js` usa `spreadsheetService.js`, porque a planilha também alimenta salas e cursos (`gpsTool`, `localRoomIntent`) e tem o fluxo de upload e recarga a quente.
+
+O schema existe como protótipo do que vai para o Postgres do Supabase. Não troque o serviço da planilha pelo do banco sem antes resolver três coisas: o upload precisa disparar o importador, `findSchedules` precisa aceitar o parâmetro `metrics` que `getHorarios` usa para `schedule_cache_hits`, e salas e cursos precisam de origem equivalente.
 
 - Centralize o acesso ao banco no módulo `database.js`.
 - Use consultas parametrizadas.
 - Mantenha índices e chaves estrangeiras existentes.
 - Não misture acesso SQL com controllers.
-- Banco gerado e arquivos locais não devem ser tratados como fonte única da aplicação atual.
+- O arquivo `.db` não é versionado: é gerado por `npm run db:import`. Não volte a comitá-lo.
+- O caminho do banco vem de `GAIA_DATABASE_PATH`, com `server/src/database/gaia.db` como padrão.
+- Casos esperados das consultas ficam em `src/database/consultasEsperadas.js`, usados pelo script manual e pelo `npm test`. Altere nos dois lugares de uma vez só: o arquivo é compartilhado.
+
+### Autenticação
+
+Quando `SUPABASE_URL` e `SUPABASE_ANON_KEY` existem, as contas ficam no Supabase Auth; sem elas, o cliente volta ao login local do `localStorage`. Os dois caminhos convivem — não remova o local sem a decisão explícita de exigir internet para entrar.
+
+- Nunca crie coluna de senha no banco. Senha é responsabilidade do Supabase Auth.
+- A `service_role` key ignora o RLS: só no servidor, nunca em `client/`.
+- Toda tabela nova com dado de usuário nasce com RLS habilitado e policy por `auth.uid()`.
+- `role` não pode ser editável pelo cliente: promoção de perfil só por `service_role` ou SQL Editor.
+- Valide o token pelos middlewares de `middleware/supabaseAuth.js`. Não decodifique JWT à mão em controllers.
+- Use `autenticacaoOpcional` em rota que o visitante precisa usar; `autenticar` onde a sessão é obrigatória.
+- Erros de autenticação usam status 401 e 403, que o handler de `app.js` repassa com a mensagem própria.
 
 ### Streaming
 

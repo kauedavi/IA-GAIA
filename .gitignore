@@ -5,3 +5,8 @@ node_modules/
 *.jks
 *.keystore
 *.p12
+# Banco SQLite: gerado por server/imports/importarHorarios.js (npm run db:import)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

@@ -1,5 +1,21 @@
 const LEGACY_FALLBACK_STATUSES = new Set([404, 405, 501]);
 
+// Quando há sessão do Supabase, manda o access_token para o servidor saber
+// quem está perguntando (middleware autenticacaoOpcional). Sem sessão — o
+// caso do visitante — vai sem Authorization e a API atende do mesmo jeito.
+async function authHeaders() {
+  const auth = globalThis.GAIA_AUTH;
+
+  if (!auth?.configurado?.()) return {};
+
+  try {
+    const token = await auth.token();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function requestChat({ url, message, signal, onChunk, onReset }) {
   if (typeof ReadableStream === "undefined") {
     return requestNonStream({ url, message, signal });
@@ -13,6 +29,7 @@ export async function requestChat({ url, message, signal, onChunk, onReset }) {
     headers: {
       "Content-Type": "application/json",
       Accept: "text/event-stream",
+      ...(await authHeaders()),
     },
     body: JSON.stringify({ message }),
     signal,
@@ -68,7 +85,7 @@ export async function readChatStream(response, { onChunk, onReset }) {
 async function requestNonStream({ url, message, signal }) {
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     body: JSON.stringify({ message }),
     signal,
   });

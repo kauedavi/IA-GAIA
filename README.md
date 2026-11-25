@@ -8,7 +8,8 @@ Aplicação web e Android para consulta de horários, localização de salas e o
 
 - **Frontend:** HTML, CSS e JavaScript Vanilla com ES Modules.
 - **Backend:** Node.js, Express e Google Gemini via SDK `@google/genai`.
-- **Dados:** planilhas `.xlsx`, `.xls` ou `.csv` carregadas pelo backend; SQLite mantido para dados legados e importações.
+- **Dados:** planilhas `.xlsx`, `.xls` ou `.csv` carregadas pelo backend são a fonte oficial de horários, salas e cursos; o SQLite guarda a grade importada e serve de protótipo do schema que vai para o Postgres do Supabase.
+- **Contas:** `Supabase Auth` quando configurado; sem configuração, login local no `localStorage`.
 - **Android:** pacote híbrido gerado pelo Capacitor.
 - **Streaming:** o chat tenta SSE em `/api/chat/stream` e usa fallback para JSON em `/api/chat`.
 - **Produção:** a API pode ser publicada no Railway e o frontend pode ser hospedado separadamente.
@@ -18,6 +19,8 @@ Aplicação web e Android para consulta de horários, localização de salas e o
 - [Pré-requisitos](#pré-requisitos)
 - [Início rápido](#início-rápido)
 - [Configuração](#configuração)
+- [Contas de usuário](#contas-de-usuário)
+- [Banco SQLite de horários](#banco-sqlite-de-horários)
 - [Executar a aplicação](#executar-a-aplicação)
 - [Arquitetura](#arquitetura)
 - [API HTTP](#api-http)
@@ -88,6 +91,10 @@ Variáveis suportadas:
 | `CLIENT_ORIGIN` | Não | - | Origens adicionais permitidas pelo CORS, separadas por vírgula |
 | `GAIA_SPREADSHEET_PATH` | Não | `server/src/data/gaia.xlsx` | Caminho da planilha de horários, salas e cursos |
 | `GAIA_ADMIN_TOKEN` | Não | - | Senha para enviar ou recarregar a planilha pela API. Sem ela, essas duas rotas ficam desativadas |
+| `GAIA_DATABASE_PATH` | Não | `server/src/database/gaia.db` | Caminho do banco SQLite de horários |
+| `SUPABASE_URL` | Não | - | URL do projeto Supabase. Sem ela, o login na nuvem fica desligado |
+| `SUPABASE_ANON_KEY` | Não | - | Chave pública (anon) do Supabase, usada para validar o token do usuário |
+| `SUPABASE_SERVICE_ROLE_KEY` | Não | - | Chave que ignora o RLS. Só no servidor, só para operações administrativas |
 
 Exemplo:
 
@@ -114,6 +121,71 @@ export const GAIA_API_URL =
 ```
 
 Para desenvolvimento local, use a URL local. Para produção, use a URL pública da API, sem a chave do Gemini no código do cliente.
+
+## Contas de usuário
+
+O G.A.I.A. tem dois modos de login, escolhidos automaticamente:
+
+| Modo | Quando vale | Onde ficam as contas |
+|---|---|---|
+| Nuvem (Supabase Auth) | `GAIA_SUPABASE` preenchido em `client/src/config.js` | No projeto Supabase; a conta vale em qualquer aparelho |
+| Local | `GAIA_SUPABASE` vazio (padrão) | Só no `localStorage` daquele navegador |
+
+O perfil "visitante" nunca cria conta: ele usa o app sem login nos dois modos.
+
+### Ligar o login na nuvem
+
+1. Crie um projeto em [supabase.com](https://supabase.com).
+2. No **SQL Editor**, rode `supabase/migrations/0001_profiles.sql`. Ele cria a tabela `profiles` ligada a `auth.users`, com RLS e o trigger que preenche o perfil no cadastro.
+3. Em **Settings → API**, copie a URL do projeto e a chave `anon`.
+4. No cliente, preencha `client/src/config.js`:
+
+   ```js
+   export const GAIA_SUPABASE = {
+     url: "https://SEU-PROJETO.supabase.co",
+     anonKey: "sua_anon_key",
+   };
+   ```
+
+5. No servidor, preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY` no `.env`.
+6. Em **Authentication → Providers → Email**, decida se exige confirmação de e-mail. Com a confirmação ligada, o cadastro não entra direto: o app avisa para confirmar o e-mail antes.
+
+> A chave `anon` é pública por natureza — ela vai para o navegador de qualquer jeito, e quem protege os dados é o RLS. A `service_role` key ignora o RLS: ela só pode existir no servidor, nunca em `client/`.
+
+### Como a sessão funciona
+
+- O cliente guarda `access_token` e `refresh_token` em `localStorage` e renova o token 1 minuto antes de expirar.
+- Nas chamadas a `/api/chat` e `/api/chat/stream`, o cliente manda `Authorization: Bearer <access_token>`.
+- O servidor valida o token em `GET /auth/v1/user` do Supabase, com cache curto em memória — assim um logout passa a valer na hora.
+- Ao abrir o app, uma sessão salva é reconfirmada com o Supabase; se o refresh token já expirou, o app volta para a tela de login.
+
+### Perfis
+
+`profiles.role` aceita `aluno`, `professor`, `empresa` e `admin`. Ninguém se promove pelo cliente: o RLS impede, então `role` só muda por `service_role` ou pelo SQL Editor.
+
+No servidor, use os middlewares de `server/src/middleware/supabaseAuth.js`:
+
+```js
+import { autenticar, autenticacaoOpcional, exigirPerfil } from "./middleware/supabaseAuth.js";
+
+rotas.get("/privado", autenticar, handler);                        // exige login
+rotas.post("/chat", autenticacaoOpcional, handler);                // atende visitante também
+rotas.post("/admin", autenticar, exigirPerfil("admin"), handler);  // exige perfil
+```
+
+## Banco SQLite de horários
+
+A planilha continua sendo a fonte oficial de horários, salas e cursos do app. O SQLite guarda a mesma grade em forma relacional (`turmas`, `disciplinas`, `professores`, `ambientes`, `horarios`) e serve de protótipo do schema que vai para o Postgres do Supabase.
+
+O arquivo `.db` **não** é versionado. Gere a partir da planilha:
+
+```bash
+cd server
+npm run db:import   # lê imports/Horários Tarde.xlsx e popula o gaia.db
+npm run db:verify   # integrity_check e contagem por tabela
+```
+
+As 19 consultas de conferência rodam no `npm test` (`server/test/horariosDatabase.test.js`). Sem o `.db` populado, esse bloco é **pulado** em vez de falhar, para um clone novo passar nos testes sem a planilha.
 
 ## Executar a aplicação
 
@@ -201,7 +273,7 @@ IA-HARI/
 - `agent/tools/`: ferramentas disponíveis ao Gemini.
 - `agent/systemInstruction.js`: instruções de personalidade e comportamento.
 - `data/`: dados de fallback e arquivos legados.
-- `database/`: implementação SQLite legada e esquema.
+- `database/`: banco SQLite de horários, esquema e scripts de conferência. O arquivo `.db` não é versionado: gere com `npm run db:import` dentro de `server/`.
 - `middleware/` e `observability/`: métricas e logs estruturados.
 
 ## API HTTP
@@ -212,12 +284,23 @@ IA-HARI/
 |---|---|---|
 | `GET` | `/health` | Estado básico da API |
 
+### Autenticação
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/api/auth/status` | Informa se o login na nuvem está configurado neste servidor |
+| `GET` | `/api/auth/eu` | Confirma a sessão e devolve `{ id, email, role, nome }`. Exige `Authorization: Bearer <access_token>` |
+
+`/api/auth/eu` responde 401 com token ausente, inválido ou expirado, e 503 se o servidor não tiver `SUPABASE_URL` e `SUPABASE_ANON_KEY`.
+
 ### Chat
 
 | Método | Rota | Descrição |
 |---|---|---|
 | `POST` | `/api/chat` | Resposta JSON completa |
 | `POST` | `/api/chat/stream` | Resposta progressiva via Server-Sent Events |
+
+As duas aceitam `Authorization: Bearer <access_token>` de forma **opcional**: com token válido o servidor sabe quem perguntou; sem token, atende o visitante normalmente.
 
 Corpo JSON:
 

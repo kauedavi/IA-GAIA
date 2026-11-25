@@ -1,6 +1,7 @@
 import "./src/config/env.js";
 import express from "express";
 import cors from "cors";
+import { authRoutes } from "./src/routes/authRoutes.js";
 import { chatRoutes } from "./src/routes/chatRoutes.js";
 import { spreadsheetRoutes } from "./src/routes/spreadsheetRoutes.js";
 import { latencyMetrics } from "./src/middleware/latencyMetrics.js";
@@ -25,6 +26,9 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
       return callback(new Error("Origem não autorizada pelo CORS."));
     },
+    // Explícito para o preflight não barrar o JWT do Supabase (Authorization)
+    // nem o token de administrador da planilha.
+    allowedHeaders: ["Content-Type", "Accept", "Authorization", "X-GAIA-Admin"],
   })
 );
 app.use((req, res, next) => {
@@ -35,10 +39,11 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "32kb" }));
 app.get("/health", (_req, res) => res.json({ success: true, data: { status: "ok" } }));
+app.use("/api", authRoutes);
 app.use("/api", chatRoutes);
 app.use("/api", spreadsheetRoutes);
 app.use((error, req, res, _next) => {
-  const status = [400, 404, 429, 500, 503].includes(error.status) ? error.status : 500;
+  const status = [400, 401, 403, 404, 429, 500, 503].includes(error.status) ? error.status : 500;
   const category = ["gemini_failure", "gemini_timeout"].includes(error?.telemetryCategory)
     ? error.telemetryCategory
     : "application_error";
@@ -47,8 +52,12 @@ app.use((error, req, res, _next) => {
     req.latencyMetrics.error_category = category;
   }
   console.error(JSON.stringify({ event: "api_error", status, category }));
+  // Erros de autenticação (e de validação) já trazem mensagem própria;
+  // os genéricos abaixo falam do Gemini e não servem para eles.
+  const temMensagemPropria =
+    [400, 401, 403].includes(status) || String(error?.code || '').startsWith('supabase');
   const message =
-    status === 400
+    temMensagemPropria
       ? error.message
       : status === 503
         ? "O serviço Gemini está temporariamente indisponível. Tente novamente em instantes."

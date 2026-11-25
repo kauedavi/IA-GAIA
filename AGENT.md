@@ -1,180 +1,348 @@
-🤖 AGENT.md - Diretrizes de Desenvolvimento do Projeto G.A.I.A
+# AGENT.md - Diretrizes do projeto G.A.I.A
 
-Este documento define os padrões obrigatórios de arquitetura, qualidade de código, nomenclatura e design de interface (UX/UI) para qualquer Agente de Inteligência Artificial ou desenvolvedor atuando no repositório G.A.I.A.
+Este documento define como agentes e desenvolvedores devem analisar, implementar, validar e manter o G.A.I.A.
 
-📌 1. Visão Geral do Projeto
+## 1. Visão geral
 
-O G.A.I.A (Assistente de Acessibilidade e Rotas Inteligentes) é uma plataforma de suporte e orientação aos alunos.
+O G.A.I.A ajuda alunos e funcionários da Escola SENAI Anchieta a consultar horários, localizar salas e usar o mapa da unidade.
 
-Backend: Node.js (Express) em arquitetura monolítica modularizada por camadas (/server), integrado à API do Google Gemini via Function Calling.
+O projeto possui três superfícies integradas:
 
-Frontend: Aplicação Web estática e moderna em Vanilla JavaScript usando ES Modules nativos (/client).
+- `client/`: aplicação web estática em Vanilla JavaScript.
+- `server/`: API Node.js/Express com Gemini, planilhas e métricas.
+- `android/`: aplicativo híbrido criado pelo Capacitor a partir de `client/`.
 
-Hospedagem Alvo: Backend na Railway e Frontend estático (Vercel/GitHub Pages).
+A entrega deve preservar a separação de responsabilidades: a chave Gemini nunca sai do backend; dados operacionais vêm da planilha quando disponíveis; e o código Android não replica a lógica do frontend.
 
-🧼 2. Princípios de Código Limpo (Clean Code)
+## 2. Metodologia obrigatória
 
-Todo código gerado ou modificado pelo agente DEVE seguir estes princípios:
+Antes de alterar código:
 
-2.1 Nomenclatura Clara e Autoexplicativa
+1. Leia os arquivos diretamente relacionados e o README.
+2. Determine se a mudança afeta frontend, backend, planilha, streaming ou Android.
+3. Localize o padrão existente no mesmo domínio.
+4. Faça uma mudança completa e cirúrgica.
+5. Atualize testes e documentação diretamente relacionadas.
+6. Execute o menor conjunto de validações que cobre a alteração.
 
-Variáveis e Funções: Em inglês (padrão da indústria) ou português consistente com o domínio do negócio, mantendo o padrão camelCase.
+Fluxo para bugs:
 
-Nomes Verbosos > Nomes Curtos: Prefira nomes expressivos que dispensem comentários para entender o propósito.
+1. Reproduza ou confirme o cenário.
+2. Identifique a causa raiz.
+3. Corrija o módulo responsável.
+4. Evite ampliar o escopo para problemas não relacionados.
+5. Adicione ou ajuste um teste que falhe sem a correção.
 
-❌ const d = await getH(t);
+Não assuma comportamento não presente no repositório. Não introduza framework, biblioteca ou padrão arquitetural apenas para modernizar o projeto.
 
-✅ const classSchedule = await fetchScheduleByClassId(classId);
+## 3. Convenções gerais
 
-Constantes: Em UPPER_SNAKE_CASE (ex: MAX_CHAT_HISTORY_LENGTH, DEFAULT_ROOM_CAPACITY).
+### Idioma e nomenclatura
 
-Classes e Interfaces: Em PascalCase (ex: ChatController, MapEngine).
+- Use português para nomes que representam diretamente o domínio do projeto: `horarios`, `sala`, `turma`, `planilha`.
+- Use inglês em nomes técnicos de transporte e infraestrutura quando seguir o padrão já existente: `chatService`, `chatStream`, `latencyMetrics`.
+- Use `camelCase` para variáveis e funções.
+- Use `UPPER_SNAKE_CASE` para constantes.
+- Use `PascalCase` para classes Java e somente quando o projeto realmente utilizar classes.
+- Use nomes que expressem intenção, não abreviações ambíguas.
 
-Booleanos: Devem começar com verbos auxiliares (is, has, should).
+Exemplo:
 
-✅ isLoading, hasActiveRoute, shouldTriggerGps.
+```js
+// Evite
+const d = await getH(t);
 
-2.2 Funções Pequenas e com Responsabilidade Única (SRP)
+// Prefira
+const classSchedule = await getHorarios({ turma: classId });
+```
 
-Cada função deve fazer apenas uma coisa e fazê-la bem.
+### JavaScript
 
-Evite funções com mais de 25-30 linhas. Se exceder, extraia partes da lógica em funções auxiliares organizadas no diretório utils/.
+- Use indentações de 2 espaços.
+- Use ponto e vírgula.
+- Use `async/await` para operações assíncronas.
+- Não deixe blocos `catch` vazios.
+- Não use casts ou contornos artificiais em JavaScript.
+- Preserve a API pública existente quando uma alteração puder afetar módulos carregados globalmente.
+- Evite comentário que apenas repita o código.
+- Comente regras não óbvias, compatibilidade legada, limites de rede ou invariantes importantes.
+- Não deixe `console.log` temporário em produção.
 
-Limite máximo de 3 parâmetros por função. Para mais parâmetros, utilize desestruturação de objetos:
+### Arquivos
 
-// ✅ Bom
-function createMessageBubble({ text, sender, timestamp, hasAction = false }) { ... }
+- Prefira arquivos e funções com responsabilidade única.
+- Extraia helpers locais quando um bloco estiver difícil de testar ou entender.
+- Não crie abstrações antes que haja repetição ou responsabilidade clara.
+- Atualize imports, exports e referências globais em conjunto.
+- Remova somente código morto relacionado à alteração.
 
+## 4. Backend
 
-2.3 Tratamento de Erros e Defensividade
+### Estrutura
 
-Nunca utilize blocos catch vazios.
+```text
+server/
+├── app.js
+├── server.js
+├── scripts/
+├── src/
+│   ├── agent/
+│   ├── config/
+│   ├── controllers/
+│   ├── data/
+│   ├── database/
+│   ├── middleware/
+│   ├── observability/
+│   ├── routes/
+│   └── services/
+└── test/
+```
 
-Trate requisições assíncronas com async/await e blocos try/catch explícitos.
+Respeite esta divisão:
 
-Retorne erros estruturados e padronizados no backend:
+- `routes/`: declaração de endpoints, sem regra de negócio.
+- `controllers/`: validação HTTP, status, envelopes e delegação.
+- `services/`: regras da aplicação e integração com Gemini ou planilha.
+- `agent/`: instrução de sistema e ferramentas de Function Calling.
+- `data/`: fallbacks isolados e dados estáticos.
+- `database/`: SQLite legado e scripts de manutenção.
+- `middleware/`: enriquecimento da requisição, CORS e observabilidade.
+- `observability/`: preparação e sumarização de métricas.
 
-return res.status(400).json({
-  success: false,
-  error: {
-    code: 'INVALID_INPUT',
-    message: 'O parâmetro turmaId é obrigatório.'
-  }
-});
+### Express e respostas
 
+- Use o formato existente:
 
-🟢 3. Padrões do Backend (Node.js & Express)
-
-3.1 Arquitetura em Camadas (Layered Monolith)
-
-Respeite estritamente o isolamento de pastas em /server/src/:
-
-routes/: Definição de endpoints HTTP sem regras de negócio.
-
-controllers/: Recebe a requisição (req), valida payload e delega para o serviço (res).
-
-services/: Contém a regra de negócio e chamadas ao Gemini SDK.
-
-agent/tools/: Implementação de cada Function Calling individual.
-
-data/: Apenas dados estáticos/mocks isolados.
-
-3.2 Integração Gemini (Google AI Studio)
-
-Utilize o SDK oficial (@google/genai).
-
-Prompts de sistema (systemInstruction.js) devem ser mantidos como variáveis de texto multilinhas formatadas e limpas.
-
-Nunca faça hardcode de chaves de API. Use sempre process.env.GEMINI_API_KEY.
-
-🎨 4. Padrões do Frontend (HTML, CSS, JS Vanilla)
-
-4.1 Estrutura Modular (ES Modules)
-
-Todo código JS frontend em /client/src/ deve usar sintaxe import/export.
-
-O index.html deve importar apenas o ponto de entrada principal:
-
-<script type="module" src="src/main.js"></script>
-
-
-Proibido escrever código JS inline no HTML (atributos onclick="", etc.).
-
-4.2 Manipulação do DOM
-
-Separe completamente a lógica de dados da renderização visual (chatUI.js).
-
-Use element.querySelector e element.querySelectorAll com seletores CSS limpos.
-
-Ao criar elementos dinâmicos, prefira a criação explícita ou template literals sanitizados para evitar ataques XSS.
-
-🎨 5. Padrões de UX/UI Moderno
-
-O visual do G.A.I.A deve seguir uma estética moderna, profissional, acessível e limpa.
-
-5.1 Sistema de Cores e Variáveis CSS (styles/main.css)
-
-Utilize um tema dark/light refinado com foco em acessibilidade visual (alto contraste):
-
-:root {
-  /* Paleta Principal */
-  --primary-color: #2563eb;       /* Azul institucional moderno */
-  --primary-hover: #1d4ed8;
-  --bg-dark: #0f172a;              /* Slate escuro para visual elegante */
-  --surface-dark: #1e293b;        /* Card / Container background */
-  --surface-border: #334155;
-  
-  /* Texto */
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  
-  /* Estado e Feedback */
-  --agent-bubble-bg: #334155;
-  --user-bubble-bg: #2563eb;
-  --accent-color: #10b981;        /* Verde para status/rotas */
-  
-  /* Tipografia & Formas */
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --transition-fast: 0.2s ease-in-out;
+```json
+{
+  "success": true,
+  "data": {}
 }
+```
 
+- Em falhas HTTP, use `success: false` e uma mensagem clara.
+- Controllers não acessam Gemini, planilhas ou arquivos diretamente.
+- Serviços não formatam respostas Express.
+- Encaminhe erros para o middleware existente com `next(error)`.
+- Preserve os limites já usados pela API, como 32 KB no corpo JSON e 2000 caracteres no chat.
+- Não exponha chave, stack trace, payload completo do Gemini ou dados sensíveis em respostas ou logs.
 
-5.2 Estética e Layout (UX/UI Rules)
+### Gemini
 
-Glassmorphism Suave: Uso moderado de backdrop-filter: blur(10px) e bordas sutis (1px solid var(--surface-border)).
+- Use somente `@google/genai`.
+- Leia a chave e os modelos por ambiente em `server/src/config/gemini.js`.
+- Nunca coloque a chave em clientes, logs, testes ou arquivos versionados.
+- Mantenha `GEMINI_MODEL` e `GEMINI_FALLBACK_MODEL` configuráveis.
+- Preserve o deadline, os retries transitórios e o limite de rodadas antes de alterar o fluxo.
+- Não envie mensagens completas ou metadados desnecessários para ferramentas.
+- Novas ferramentas devem declarar nome, schema e handler consistentes com `agent/tools/index.js`.
+- Respeite o cache e os limites de tamanho usados para economizar tokens.
 
-Tipografia: Hierarquia visual nítida. Títulos com pesos 600/700, texto corrido com peso 400 e altura de linha (line-height: 1.5).
+### Planilhas e dados
 
-Micro-interações: Todos os botões e elementos interativos devem possuir transições suaves nos estados :hover, :focus e :active.
+- A fonte operacional atual é uma planilha `.xlsx`, `.xls` ou `.csv`.
+- Use `spreadsheetService.js` como fonte central dos dados carregados.
+- Normalize nomes de abas e colunas sem alterar a identificação oficial.
+- Preserve o comportamento de fallback de salas apenas quando não houver correspondência na planilha.
+- Não mantenha consultas novas baseadas nos mocks como fonte principal.
+- Recarregar uma planilha deve invalidar dados derivados e cache de consultas.
+- Upload deve validar extensão e tamanho antes de persistir.
+- Mudanças no formato da planilha precisam atualizar o parser, os testes e o README.
 
-.btn-primary {
-  transition: transform var(--transition-fast), background-color var(--transition-fast);
-}
-.btn-primary:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-}
+### SQLite
 
+SQLite é usado como persistência legada e em scripts de importação. Não o substitua por planilha ou Gemini dentro de um serviço sem necessidade clara.
 
-Feedback Visual de Ação: O indicador de digitação da IA ("G.A.I.A está a pensar...") deve conter animação sutil de pulso ou pontos em carregamento.
+- Centralize o acesso ao banco no módulo `database.js`.
+- Use consultas parametrizadas.
+- Mantenha índices e chaves estrangeiras existentes.
+- Não misture acesso SQL com controllers.
+- Banco gerado e arquivos locais não devem ser tratados como fonte única da aplicação atual.
 
-Scroll Automático: A janela do chat deve sempre rolar automaticamente para a última mensagem com comportamento suave (behavior: 'smooth').
+### Streaming
 
-🤖 6. Instruções Específicas para o Agente AI
+- Preserve `/api/chat/stream` como transporte progressivo.
+- Preserve `/api/chat` como fallback JSON.
+- SSE deve emitir frames claros para `chunk`, `reset`, `done` ou `error`.
+- Streaming deve respeitar desconexão, abort e fechamento do cliente.
+- Não tente ler ou reproduzir respostas completas apenas para contornar o transport.
+- Métricas de latência devem continuar sem mensagem, ferramenta com argumentos, chave ou texto de erro sensível.
 
-Ao ser solicitado para gerar ou alterar código neste repositório:
+### Node.js
 
-Analise o impacto geral: Antes de responder, verifique se a alteração afeta a separação entre backend e frontend.
+- Instale novas dependências apenas quando o problema não puder ser resolvido com APIs nativas.
+- Não adicione arquivos de configuração duplicados.
+- Use imports ES Module, pois a raiz possui `"type": "module"`.
+- Mantenha o inicializador enxuto em `server/server.js`.
+- Use portas e origens configuráveis por ambiente.
 
-Forneça arquivos completos: Sempre que atualizar um arquivo modular, prefira gerar o código completo do módulo em vez de trechos soltos, mantendo as declarações import/export intactas.
+## 5. Frontend
 
-Não introduza bibliotecas desnecessárias: Mantenha o backend enxuto e o frontend em Vanilla JS (a menos que a instalação de uma lib específica seja aprovada, ex: Three.js para o 3D).
+### Módulos
 
-Formatação de código: Utilize identação de 2 espaços para JavaScript/JSON/HTML/CSS.
+O frontend utiliza dois modelos de carregamento que devem ser preservados:
 
-Comentários de código: Escreva comentários apenas quando a regra de negócio for complexa ou para documentar blocos de Function Calling do Gemini. Não comente o óbvio.
+- `client/src/main.js` é o ponto de entrada ES Module.
+- `main.js` carrega os módulos de domínio antigos como scripts clássicos deliberadamente, mantendo contratos globais usados pela interface e pelo Android.
+- `chatStream.js` é um ES Module exposto via `window.GAIA_CHAT_TRANSPORT`.
 
-eof
+Não converta todo o domínio em ES Module por uma alteração localizada. Quando houver migração, faça-a por módulo completo e atualize o carregamento em `main.js`, dependências globais e testes.
+
+### Separação
+
+- `core/`: armazenamento, persistência e utilitários.
+- `features/`: telas e casos de uso da interface.
+- `map/`: mapa 2D e visualizações 3D.
+- `platform/`: voz, notificações e integração com o navegador/Android.
+- `data/`: dados estáticos e configuração local.
+- `bootstrap.js`: composição final e inicialização.
+
+Não misture chamada HTTP, renderização visual e persistência em uma única função além do necessário.
+
+### Estado e compatibilidade
+
+- Preserve nomes globais já usados por eventos inline, pontes Android e módulos clássicos.
+- Use `window.GAIA_API_URL` para configurar o endereço da API.
+- Preserve compatibilidade com `window.Nativo` para voz e recursos disponíveis no app.
+- Mudanças no formato de `localStorage` devem incluir migração.
+- Não remova dados locais válidos durante uma migração.
+
+### DOM e segurança
+
+- Não introduza atributos `onclick` ou código JavaScript inline novo no HTML.
+- Use `querySelector` e `querySelectorAll` com seletores claros.
+- Evite reconstruções desnecessárias de grandes partes da interface.
+- Sanitize dados externos antes de inserir em `innerHTML`.
+- Prefira criar elementos com texto separado de HTML quando houver entrada do usuário.
+- Não use `eval`, interpolação insegura ou atribuição dinâmica em nomes globais sem necessidade.
+
+### API e streaming
+
+- O cliente deve tentar `POST /api/chat/stream` e usar fallback para `POST /api/chat` em erro de transporte legado.
+- Preserve cancelamento pelo navegador.
+- Atualize a interface somente depois de estados consistentes.
+- Remova texto temporário com o evento `reset` quando a resposta muda para uma tool call.
+- Trate falha de rede, corpo inválido e desconexão com mensagens visíveis.
+
+### CSS e acessibilidade
+
+- Mantenha a hierarquia visual e as classes já usadas em `client/styles.css`.
+- Preserve variáveis CSS existentes e adicione novas variáveis somente para estados reutilizáveis.
+- Use contraste adequado para texto, controles e estados de foco.
+- Todos os controles devem ser operáveis por teclado.
+- Use rótulos, `aria-*` e texto alternativo coerentes.
+- Botões e links devem manter estados `hover`, `focus`, `active` e `disabled`.
+- Não use apenas cor para comunicar uma ação ou erro.
+- Preserve `prefers-reduced-motion` quando houver animação.
+- A interface deve continuar legível em desktop, celular e WebView.
+
+## 6. Android e Capacitor
+
+### Organização atual
+
+- `capacitor.config.json` define `webDir: "client"` e o app `br.com.senai.gaia`.
+- `android/app/src/main/java/br/com/senai/gaia/MainActivity.java` usa `BridgeActivity`.
+- O conteúdo Android publicado é gerado a partir de `client/` pelo Capacitor.
+- A API continua separada e não é empacotada no APK.
+- `https://localhost` é uma origem permitida pelo CORS.
+
+### Método de alteração
+
+- Alterações no frontend exigem `npm run cap:sync`.
+- Não edite arquivos gerados em `android/app/src/main/assets/public/` manualmente.
+- Não implemente lógica funcional Java duplicada quando ela já existe no cliente.
+- Preserve o `applicationId`, `namespace` e contrato com a bridge ao alterar o pacote.
+- Não aumente `minSdk`, `targetSdk` ou versões sem motivo confirmado.
+- Não adicione plugins ou permissões sem uso real.
+
+### Permissões e configuração
+
+- Mantenha somente permissões necessárias.
+- Limite acessos de rede e origens CORS.
+- Não coloque URL de API ou chave Gemini em recursos Android sem justificativa.
+- Teste voz, microfone, localização, notificação e navegação em celular real.
+- Teste a rota pública da API e o fallback offline do frontend.
+
+### Build
+
+Comandos oficiais da raiz:
+
+```bash
+npm run cap:sync
+npm run android:build
+npm run android:run
+npm run android:open
+```
+
+Saída de depuração:
+
+```text
+android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Não versionar keystores, senhas ou artefatos locais de build.
+
+## 7. Segurança
+
+- Mantenha `GEMINI_API_KEY` somente no servidor.
+- Use `CLIENT_ORIGIN` ou a lista CORS controlada.
+- Valide tamanho e tipo de uploads.
+- Use parâmetros preparados no SQLite.
+- Não registre mensagens pessoais, filtros completos ou resultados completos como dados de telemetria.
+- Não aceite HTML ou URLs fornecidos pelo usuário sem sanitização.
+- Revise origens, permissões e dados persistidos antes de publicar.
+
+## 8. Qualidade e testes
+
+### Testes existentes
+
+Execute na raiz:
+
+```bash
+npm test
+```
+
+A cobertura atual inclui:
+
+- ferramentas Gemini e resposta compacta;
+- streaming JSON/SSE;
+- consultas locais de salas;
+- cache de horários;
+- métricas de latência;
+- transporte de chat no frontend.
+
+Testes ficam em:
+
+- `server/test/*.test.js`
+- `client/test/*.test.js`
+
+### Quando adicionar teste
+
+Adicione ou ajuste testes para:
+
+- comportamento novo;
+- correção de bug;
+- mudança de contrato HTTP;
+- alteração de parser de planilha;
+- fallback JSON/SSE;
+- migração de dados ou compatibilidade Android;
+- mudança em cache, Gemini ou métricas.
+
+Um teste deve verificar o comportamento observável, não detalhes internos triviais.
+
+Use dados temporários para planilhas e remova arquivos temporários ao finalizar.
+
+### Checklist de entrega
+
+Antes de concluir:
+
+- [ ] A alteração está limitada ao problema solicitado.
+- [ ] Imports, exports e referências globais continuam válidos.
+- [ ] Frontend e backend não vazam a chave do Gemini.
+- [ ] Planilhas e dados legados preservam fallback adequado.
+- [ ] Streaming continua com fallback JSON.
+- [ ] CORS e limites da API continuam seguros.
+- [ ] A interface mantém teclado e acessibilidade.
+- [ ] Android foi sincronizado quando `client/` mudou.
+- [ ] Testes e documentação relacionados foram atualizados.
+- [ ] `npm test` passou.

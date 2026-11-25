@@ -1,284 +1,422 @@
 # IA-GAIA
 
-![](client/src/img/logo-android.png)
+![Logotipo do GAIA](client/src/img/logo-android.png)
 
-Assistente para consulta de horários e orientação de salas da Escola SENAI
-Anchieta.
+Aplicação web e Android para consulta de horários, localização de salas e orientação na Escola SENAI Anchieta.
 
-## Configuração para desenvolvimento
+## Visão rápida
 
-### Pré-requisitos
+- **Frontend:** HTML, CSS e JavaScript Vanilla com ES Modules.
+- **Backend:** Node.js, Express e Google Gemini via SDK `@google/genai`.
+- **Dados:** planilhas `.xlsx`, `.xls` ou `.csv` carregadas pelo backend; SQLite mantido para dados legados e importações.
+- **Android:** pacote híbrido gerado pelo Capacitor.
+- **Streaming:** o chat tenta SSE em `/api/chat/stream` e usa fallback para JSON em `/api/chat`.
+- **Produção:** a API pode ser publicada no Railway e o frontend pode ser hospedado separadamente.
 
-- Node.js instalado;
-- uma chave da API do Gemini;
-- Android Studio, Android SDK e JDK 17 ou superior apenas para gerar o APK.
+## Índice
 
-### Instalação
+- [Pré-requisitos](#pré-requisitos)
+- [Início rápido](#início-rápido)
+- [Configuração](#configuração)
+- [Executar a aplicação](#executar-a-aplicação)
+- [Arquitetura](#arquitetura)
+- [API HTTP](#api-http)
+- [Fonte de horários e salas](#fonte-de-horários-e-salas)
+- [Streaming e otimizações](#streaming-e-otimizações)
+- [Testes](#testes)
+- [Gerar o APK Android](#gerar-o-apk-android)
+- [Diagnóstico de latência](#diagnóstico-de-latência)
 
-No terminal do VS Code, instale as dependências:
+## Pré-requisitos
+
+### Desenvolvimento web
+
+- Node.js 18 ou superior.
+- Chave da API Google Gemini.
+- Navegador moderno.
+
+### Desenvolvimento Android
+
+- Tudo acima.
+- Android Studio.
+- Android SDK.
+- JDK 17 ou superior.
+
+## Início rápido
+
+Na raiz do projeto:
 
 ```bash
 npm install
+npm start
 ```
 
-Se o PowerShell bloquear a execução de scripts, verifique e ajuste a política
-de execução com responsabilidade:
+A API fica disponível em `http://localhost:3000`.
 
-```powershell
-Get-ExecutionPolicy
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+Para verificar se o backend iniciou:
+
+```bash
+curl http://localhost:3000/health
 ```
 
-### Configuração do backend
+Para abrir o frontend, sirva o diretório `client/` em um servidor estático. Por exemplo:
 
-1. Copie `server/.env.example` para `server/.env`.
-2. Preencha `GEMINI_API_KEY` no arquivo `server/.env`.
-3. Mantenha a chave do Gemini somente no backend. Nunca a coloque no frontend
-   ou em arquivos enviados para o navegador.
-4. Em produção, defina `CLIENT_ORIGIN` com a URL pública do frontend.
+```bash
+npx http-server client -p 5500
+```
 
-Exemplo de configuração:
+Acesse `http://localhost:5500`.
+
+## Configuração
+
+### Backend
+
+Copie o exemplo de ambiente:
+
+```bash
+copy server\.env.example server\.env
+```
+
+Variáveis suportadas:
+
+| Variável | Obrigatória | Padrão | Uso |
+|---|---:|---|---|
+| `GEMINI_API_KEY` | Sim | - | Autentica as chamadas ao Google Gemini |
+| `GEMINI_MODEL` | Não | `gemini-3.8-flash` | Modelo principal |
+| `GEMINI_FALLBACK_MODEL` | Não | `gemini-3.7-flash` | Modelo usado após falhas do principal |
+| `PORT` | Não | `3000` | Porta HTTP da API |
+| `CLIENT_ORIGIN` | Não | - | Origens adicionais permitidas pelo CORS, separadas por vírgula |
+| `GAIA_SPREADSHEET_PATH` | Não | `server/src/data/gaia.xlsx` | Caminho da planilha de horários, salas e cursos |
+
+Exemplo:
 
 ```env
-GEMINI_API_KEY=sua_chave
-GEMINI_MODEL=gemini-3.6-flash
-GEMINI_FALLBACK_MODEL=gemini-3.5-flash
 PORT=3000
 CLIENT_ORIGIN=http://localhost:5500
+GEMINI_API_KEY=sua_chave
+GEMINI_MODEL=gemini-3.8-flash
+GEMINI_FALLBACK_MODEL=gemini-3.7-flash
+GAIA_SPREADSHEET_PATH=C:\caminho\para\gaia.xlsx
 ```
 
-### Configuração do frontend
+> Nunca envie `GEMINI_API_KEY` para o frontend. Ela deve existir apenas no processo do backend.
 
-O frontend é estático e não usa um bundler, então variáveis `.env` não são
-carregadas automaticamente pelo navegador. Configure a URL da API em
-`client/src/config.js`; a chave do Gemini não pertence ao frontend.
+### Frontend
 
-Essa é a única variável necessária no frontend. A chave `GEMINI_API_KEY` deve
-permanecer exclusivamente no backend.
+O frontend não usa bundler nem carrega arquivos `.env`.
 
-### Execução local
+Defina o endereço da API em `client/src/config.js`:
 
-Inicie o backend com:
+```js
+export const GAIA_API_URL =
+  "http://localhost:3000/api/chat";
+```
+
+Para desenvolvimento local, use a URL local. Para produção, use a URL pública da API, sem a chave do Gemini no código do cliente.
+
+## Executar a aplicação
+
+### Backend
 
 ```bash
 npm start
 ```
 
-O endpoint `GET /health` pode ser usado para verificar se o servidor está
-funcionando. Para testar o frontend, abra `client/index.html` no navegador,
-preferencialmente por um servidor local.
+O processo inicia o Express e o observador da planilha.
 
-O endpoint de chat é `POST /api/chat`, com o corpo:
+### Frontend
 
-```json
-{"message":"Onde fica a sala 304?"}
-```
+Sirva `client/` com qualquer servidor estático. Abrir `client/index.html` diretamente pode impedir o carregamento correto dos ES Modules em alguns navegadores.
 
-A interface tenta primeiro `POST /api/chat/stream` e renderiza os eventos
-SSE de texto progressivamente. Se a API ainda não oferecer esse endpoint,
-usa o fluxo JSON existente em `POST /api/chat`. O endpoint JSON permanece
-disponível como alternativa.
-
-Execute `npm test` para rodar os testes do backend e do transporte de streaming
-do client.
-
-## Como gerar o APK Android
-
-O projeto usa o [Capacitor](https://capacitorjs.com/) para empacotar o
-frontend de `client/` em um aplicativo Android. A API continua separada em
-`server/` e não é incluída no APK.
-
-No Android, o WebView do Capacitor usa `https://localhost` como origem. Essa
-origem já está liberada no CORS do backend para permitir as chamadas do APK.
-
-### Pré-requisitos
-
-- Android Studio instalado;
-- Android SDK e JDK 17 ou superior configurados pelo Android Studio;
-- um emulador Android ou um celular com depuração USB ativada.
-
-Se o Gradle informar que está usando Java 8, selecione o JDK do Android Studio
-em **Settings > Build, Execution, Deployment > Build Tools > Gradle > Gradle
-JDK** ou configure a variável `JAVA_HOME`.
-
-### Gerar um APK de teste
-
-Com o Android Studio e o SDK configurados, execute:
+### Testar uma conversa
 
 ```bash
-npm run cap:sync                                           
-npm run android:build                      
+curl -X POST http://localhost:3000/api/chat ^
+  -H "Content-Type: application/json" ^
+  -d "{\"message\":\"Onde fica a sala 304?\"}"
 ```
 
-O APK será criado em:
+No PowerShell, use `Invoke-RestMethod` caso `^` não faça parte do comando desejado:
+
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/api/chat" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"message":"Onde fica a sala 304?"}'
+```
+
+## Arquitetura
 
 ```text
-android/app/build/outputs/apk/debug/app-debug.apk
-```
-
-Para instalar e executar em um dispositivo conectado:
-
-```bash
-npm run android:run
-```
-
-### Gerar uma versão de produção
-
-Para distribuir o aplicativo, abra `android/` no Android Studio e use
-**Build > Generate Signed App Bundle or APK**. Escolha **APK**, crie ou
-selecione um keystore e mantenha esse arquivo e suas senhas fora do Git.
-
-Antes de gerar a versão final:
-
-1. Publique a API e configure o frontend para usar sua URL pública, não
-   `http://localhost:3000`;
-2. configure `GEMINI_API_KEY` no ambiente da API e permita a origem
-   `http://localhost` usada pelo Capacitor;
-3. execute `npm run cap:sync`;
-4. teste login, chat, mapa, voz, localização e funcionamento offline;
-5. gere uma versão assinada e instale-a em um celular real.
-
-Alterações apenas no `server/` não exigem um novo APK, desde que a URL da API
-permaneça a mesma. Alterações no `client/` exigem nova sincronização e uma nova
-build do aplicativo.
-
-## Sobre o projeto
-
-O IA-GAIA combina um frontend web/Android com uma API Express integrada ao
-Gemini. O frontend usa um ponto de entrada ES Module e módulos de domínio
-carregados sequencialmente, sem bundler. Os módulos de domínio são scripts
-clássicos intencionais para preservar os contratos globais usados pelos
-callbacks do Android, eventos inline e mapa.
-
-O transporte de chat com streaming é um ES Module (`client/src/features/chatStream.js`),
-exposto pelo ponto de entrada como `window.GAIA_CHAT_TRANSPORT`. Os callbacks
-globais já usados pelo Android permanecem inalterados; uma migração mais ampla
-dos módulos de domínio não faz parte dessa mudança.
-
-O backend concentra a chave e a integração com a IA. Seus casos de uso são
-organizados em controllers, services, agent, data e routes, mantendo a
-persistência separada da lógica da aplicação.
-
-### Migração do frontend
-
-1. Mapear funções por domínio: conversa, horários, salas, mapa e preferências.
-2. Copiar dados estáticos para `server/src/data/`, mantendo-os sem lógica.
-3. Encapsular cada consulta em uma tool com schema e handler.
-4. Transferir a personalidade para `systemInstruction.js`.
-5. Migrar o fluxo Gemini para `server/src/services/chatService.js`.
-6. Expor somente contratos HTTP pelos controllers e routes.
-7. Carregar os módulos do cliente por `client/src/main.js`.
-8. Manter a chave de texto da IA no servidor e a ponte de plataforma para
-   compatibilidade de voz e Android.
-
-## Especificações gerais
-
-### Modelos aprovados
-
-- `gemini-3.6-flash`
-- `gemini-3.5-flash`
-
-### Estrutura principal
-
-```text
-client/                 # frontend usado na web e no APK
-server/                 # API Express/Gemini
-android/                # projeto nativo gerado pelo Capacitor
-capacitor.config.json   # configuração do app Android
+IA-HARI/
+├── client/
+│   ├── index.html
+│   ├── styles.css
+│   └── src/
+│       ├── main.js
+│       ├── config.js
+│       ├── bootstrap.js
+│       ├── core/
+│       ├── features/
+│       ├── map/
+│       ├── platform/
+│       └── data/
+├── server/
+│   ├── app.js
+│   ├── server.js
+│   ├── scripts/
+│   ├── src/
+│   │   ├── agent/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── data/
+│   │   ├── database/
+│   │   ├── middleware/
+│   │   ├── observability/
+│   │   ├── routes/
+│   │   └── services/
+│   └── test/
+├── android/
+└── capacitor.config.json
 ```
 
 ### Frontend
 
-- `client/index.html`: estrutura semântica de todas as telas;
-- `client/styles.css`: estilos da aplicação;
-- `client/src/main.js`: carregador e orquestrador do frontend;
-- `client/src/platform/platform.js`: ponte de plataforma, voz, microfone,
-  notificações e compatibilidade Android;
-- `client/src/data/appData.js`: dados de exemplo e constantes da unidade;
-- `client/src/core/`: persistência, migrações e utilitários;
-- `client/src/features/`: assistente, horários, formulários, autenticação,
-  agenda e unidade;
-- `client/src/map/`: mapa SVG, busca, rotas 2D e navegação 3D;
-- `client/src/bootstrap.js`: composição final, eventos e inicialização.
+- `client/src/main.js`: ponto de entrada dos módulos.
+- `client/src/bootstrap.js`: composição da interface e inicialização.
+- `client/src/features/`: chat, agenda, autenticação, horários e dados da unidade.
+- `client/src/map/`: mapa 2D e visualizações 3D.
+- `client/src/platform/platform.js`: voz, microfone, notificações e ponte Android.
+- `client/src/features/chatStream.js`: consumo de SSE e fallback JSON.
 
 ### Backend
 
-- `server/server.js`: inicialização do Express;
-- `server/src/config/`: configuração do Gemini e ambiente;
-- `server/src/controllers/`: entrada e validação HTTP;
-- `server/src/services/`: casos de uso, sem persistência;
-- `server/src/agent/`: personalidade e Function Calling;
-- `server/src/data/`: mocks isolados de horários e salas;
-- `server/src/routes/`: endpoints REST.
+- `server/app.js`: criação da aplicação Express, CORS e rotas.
+- `server/server.js`: inicialização do servidor e observação da planilha.
+- `routes/`: contratos HTTP.
+- `controllers/`: validação da requisição e resposta.
+- `services/`: regras de aplicação.
+- `agent/tools/`: ferramentas disponíveis ao Gemini.
+- `agent/systemInstruction.js`: instruções de personalidade e comportamento.
+- `data/`: dados de fallback e arquivos legados.
+- `database/`: implementação SQLite legada e esquema.
+- `middleware/` e `observability/`: métricas e logs estruturados.
 
-### Configuração do Capacitor
+## API HTTP
 
-O diretório web usado no APK é definido em `capacitor.config.json`:
+### Saúde
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/health` | Estado básico da API |
+
+### Chat
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `POST` | `/api/chat` | Resposta JSON completa |
+| `POST` | `/api/chat/stream` | Resposta progressiva via Server-Sent Events |
+
+Corpo JSON:
 
 ```json
 {
-  "appId": "br.com.senai.gaia",
-  "appName": "GAIA",
-  "webDir": "client"
+  "message": "Qual sala pertence à turma T1?"
 }
 ```
 
-<!-- GAIA_SPREADSHEET_DOC -->
-## Planilha dinâmica de horários, cursos e salas
+Limite do corpo JSON: 32 KB.
 
-A fonte oficial passou a ser uma planilha `.xlsx`, `.xls` ou `.csv`, analisada no backend pela biblioteca SheetJS. Os mocks `horarios.mock.js` e `salas.mock.js` não são mais utilizados.
+### Planilha
 
-Coloque o arquivo em `server/src/data/gaia.xlsx` ou defina `GAIA_SPREADSHEET_PATH` com o caminho completo. Também é possível enviá-lo por `POST /api/planilha/upload` usando o campo multipart `arquivo`. Alterações no arquivo são monitoradas e recarregadas automaticamente; o endpoint `GET /api/planilha/eventos` informa atualizações por Server-Sent Events.
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/api/planilha/status` | Fonte atual e contagens |
+| `GET` | `/api/planilha/dados` | Dados completos em memória |
+| `POST` | `/api/planilha/recarregar` | Recarrega o arquivo configurado |
+| `POST` | `/api/planilha/upload` | Envia uma planilha no campo multipart `arquivo` |
+| `GET` | `/api/planilha/eventos` | Notificações SSE de recarga |
 
-A planilha pode usar estas abas:
+Exemplo de upload no PowerShell:
 
-- `Horários`: colunas `Turma`, `Dia`, `Início`, `Fim`, `Disciplina`, `Professor` e `Sala`.
-- `Salas`: colunas `ID`, `Nome`, `Bloco`, `Andar`, `Tipo`, `X` e `Y`.
-- `Cursos`: colunas `Nome`, `Código`, `Nível`, `Turma`, `Turno`, `Modalidade` e `Descrição`.
+```powershell
+curl.exe -F "arquivo=@C:\caminho\gaia.xlsx" http://localhost:3000/api/planilha/upload
+```
 
-Os nomes das abas e colunas são normalizados, sem diferenciar maiúsculas, acentos ou caracteres como espaço e `_`. A tela de Configurações permite enviar a planilha e consultar a quantidade de registros carregados.
+## Fonte de horários e salas
 
-## Testes e linha de base de latência da API
+O backend aceita arquivos `.xlsx`, `.xls` e `.csv`. O arquivo padrão é `server/src/data/gaia.xlsx`, mas pode ser definido por `GAIA_SPREADSHEET_PATH` ou enviado pela API.
 
-Execute os testes automatizados do backend na raiz do projeto:
+Alterações no arquivo são monitoradas e carregadas automaticamente. Após recarregar, o cache de consultas determinísticas é limpo.
+
+Abas reconhecidas:
+
+### Horários
+
+Colunas aceitas:
+
+- `Turma`
+- `Dia`
+- `Início`
+- `Fim`
+- `Disciplina`
+- `Professor`
+- `Sala`
+
+### Salas
+
+Colunas aceitas:
+
+- `ID`
+- `Nome`
+- `Bloco`
+- `Andar`
+- `Tipo`
+- `X`
+- `Y`
+- `Dica`
+
+### Cursos
+
+Colunas aceitas:
+
+- `Nome`
+- `Código`
+- `Nível`
+- `Turma`
+- `Turno`
+- `Modalidade`
+- `Descrição`
+
+Os nomes de abas e colunas são normalizados: não diferenciam maiúsculas, minúsculas, acentos, espaços ou sublinhados.
+
+O frontend pode enviar uma nova planilha pela tela de Configurações. A API informa a quantidade de horários, salas e cursos carregados.
+
+## Streaming e otimizações
+
+### Chat com SSE
+
+O cliente tenta `POST /api/chat/stream` primeiro.
+
+- A resposta usa eventos `chunk`, `reset`, `done` e `error`.
+- Quando há uma chamada de ferramenta Gemini entre partes de texto, o cliente remove o texto anterior e aplica a resposta final.
+- Quando SSE não está disponível ou retorna um status legado, o cliente volta automaticamente para `POST /api/chat`.
+
+### Respostas locais
+
+Consultas simples de salas podem ser resolvidas diretamente no backend sem chamar o Gemini. Isso reduz latência e consumo de tokens.
+
+### Cache de horários
+
+As consultas determinísticas de horários usam um cache em memória limitado a 128 combinações.
+
+- É local ao processo da API.
+- Não é compartilhado entre instâncias.
+- Não persiste após reiniciar.
+- Não guarda respostas completas do chat.
+- Não elimina a chamada inicial ao Gemini em todos os fluxos.
+
+Os logs registram hits, misses e duração do cache sem armazenar filtros ou resultados.
+
+### Deadline e fallback
+
+Uma chamada de chat tem limite máximo de 25 segundos, até quatro rodadas de ferramentas e até três tentativas por modelo. Em falhas transitórias, o backend pode tentar o modelo fallback configurado em `GEMINI_FALLBACK_MODEL`.
+
+## Testes
+
+Execute todos os testes automatizados na raiz:
 
 ```bash
 npm test
 ```
 
-Cada `POST /api/chat` emite uma linha JSON `api_latency` nos logs do servidor,
-sem incluir a mensagem, argumentos de ferramentas, chaves ou texto de erro do
-Gemini. O registro inclui duração total e acumulada do Gemini, duração das
-ferramentas, rodadas, tentativas/retries/falhas, tempo de backoff, duração e
-resultado de cada chamada Gemini, modelos, ferramentas acionadas, status HTTP,
-tamanho aproximado da resposta, bytes acumulados das respostas de ferramentas
-encaminhadas ao Gemini e intervalo desde a requisição anterior.
-`service_activity` classifica a primeira chamada, chamadas ativas/concurrentes
-e chamadas após pelo menos cinco minutos sem requisições. Essa classificação
-descreve o processo da API; o tempo de inicialização anterior ao recebimento da
-requisição pelo Node não é medido.
+Os testes cobrem backend, ferramentas Gemini, métricas, intenção local de salas e transporte de streaming do cliente.
 
-As consultas determinísticas de horários usam um cache em memória limitado a
-128 combinações de filtros, limpo sempre que a planilha é recarregada. O cache
-é local ao processo da API: não persiste após reinícios e não é compartilhado
-entre instâncias. Os registros incluem hits, misses e duração média de cada
-caminho, sem registrar filtros ou resultados; use esses dados para comparar o
-uso e o custo local antes de decidir manter o cache em produção. Ele não
-armazena respostas completas do chat nem evita a chamada inicial ao Gemini.
+Arquivos importantes:
 
-Salve as linhas JSON dos logs em um arquivo `.jsonl` e calcule p50/p95 geral e
-por estado de atividade, taxa de erros e uso de fallback com:
+- `server/test/*.test.js`: Express, chat, ferramentas, cache, métricas e planilha.
+- `client/test/*.test.js`: transporte SSE e fallback do frontend.
+
+## Gerar o APK Android
+
+O projeto usa Capacitor para empacotar `client/` em um aplicativo Android. A API não é incluída no APK.
+
+### Sincronizar o frontend
+
+Após alterar o conteúdo de `client/`:
+
+```bash
+npm run cap:sync
+```
+
+### Gerar um APK de depuração
+
+```bash
+npm run android:build
+```
+
+O resultado fica em:
+
+```text
+android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Para executar em um dispositivo ou emulador configurado:
+
+```bash
+npm run android:run
+```
+
+Para abrir o projeto no Android Studio:
+
+```bash
+npm run android:open
+```
+
+### Produção Android
+
+No Android Studio, use **Build > Generate Signed App Bundle or APK**.
+
+Antes da build final:
+
+1. Configure `client/src/config.js` para apontar à API pública.
+2. Configure `GEMINI_API_KEY` no ambiente da API.
+3. Adicione a URL pública do frontend em `CLIENT_ORIGIN`.
+4. Execute `npm run cap:sync`.
+5. Teste login, chat, mapa, voz, localização e comportamento offline.
+6. Gere e instale uma versão assinada em um dispositivo real.
+
+O WebView do Capacitor usa `https://localhost`. Essa origem já está liberada pelo CORS do backend.
+
+Alterações somente no backend não exigem novo APK. Alterações em `client/` exigem nova sincronização e build.
+
+## Diagnóstico de latência
+
+Cada `POST /api/chat` registra uma linha JSON `api_latency`. Os dados não incluem a mensagem, argumentos das ferramentas, chaves de API nem texto de erro completo do Gemini.
+
+A métrica contém:
+
+- Duração total e chamadas Gemini.
+- Retries, fallback e backoff.
+- Duração das ferramentas.
+- Número de rodadas.
+- Status HTTP e tamanho aproximado da resposta.
+- Bytes das respostas de ferramentas enviadas ao Gemini.
+- Intervalo desde a requisição anterior.
+- Estado `first_call`, `active_calls` ou `idle_5m`.
+
+Salve os logs estruturados em um arquivo `.jsonl` e execute:
 
 ```bash
 node server/scripts/summarize-latency.js caminho/para/api-logs.jsonl
 ```
 
-O resumo também informa a média de bytes de respostas de ferramentas por
-requisição e média/p50/p95 do tamanho da resposta HTTP, permitindo avaliar o
-tamanho entregue antes de decidir se um limite de geração é necessário. Essa
-métrica inclui o envelope JSON da API; compare-a junto à duração do Gemini e
-valide respostas representativas antes de limitar a saída.
+O resumo calcula:
 
-Para a comparação de produção, colete no mesmo deploy chamadas após períodos
-ociosos e chamadas subsequentes. O resumo local não envia dados a serviços
-externos; os logs usados devem conter apenas os registros estruturados da API.
+- Latência p50/p95 geral e por estado de atividade.
+- Taxa de erros e uso de fallback.
+- Tamanho médio das respostas das ferramentas.
+- Tamanho médio, p50 e p95 da resposta HTTP.
+- Métricas de cache de horários.
+
+Os dados são processados localmente e não são enviados a serviços externos.

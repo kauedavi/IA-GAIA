@@ -37,9 +37,16 @@ app.use(express.json({ limit: "32kb" }));
 app.get("/health", (_req, res) => res.json({ success: true, data: { status: "ok" } }));
 app.use("/api", chatRoutes);
 app.use("/api", spreadsheetRoutes);
-app.use((error, _req, res, _next) => {
-  console.error(error);
+app.use((error, req, res, _next) => {
   const status = [400, 404, 429, 500, 503].includes(error.status) ? error.status : 500;
+  const category = ["gemini_failure", "gemini_timeout"].includes(error?.telemetryCategory)
+    ? error.telemetryCategory
+    : "application_error";
+  if (req.latencyMetrics) {
+    req.latencyMetrics.logical_result = "failure";
+    req.latencyMetrics.error_category = category;
+  }
+  console.error(JSON.stringify({ event: "api_error", status, category }));
   const message =
     status === 400
       ? error.message

@@ -118,7 +118,12 @@ async function generateWithFallback(contents, metrics, deadline, streamOptions) 
       } catch (error) {
         lastError = error;
         errorStatus = Number.isInteger(error?.status) ? error.status : null;
-        if (streamOptions.signal?.aborted || error?.name === "AbortError") throw error;
+        if (streamOptions.signal?.aborted || error?.code === "CLIENT_DISCONNECTED") {
+          outcome = "cancelled";
+          throw error;
+        }
+        outcome = "failure";
+        setTelemetryCategory(error, isTimeoutError(error) ? "gemini_timeout" : "gemini_failure");
         if (metrics) metrics.gemini_failures += 1;
         if (!isTransientError(error)) throw error;
         if (attempt === MAX_RETRIES - 1) break;
@@ -202,9 +207,30 @@ function isTransientError(error) {
   return codes.some((code) => RETRYABLE_ERROR_CODES.has(code));
 }
 
+function isTimeoutError(error) {
+  if (
+    error?.name === "TimeoutError" ||
+    error?.status === 408 ||
+    error?.status === 504
+  ) {
+    return true;
+  }
+  const codes = [error?.code, error?.cause?.code];
+  return codes.some((code) =>
+    ["ETIMEDOUT", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT"].includes(code)
+  );
+}
+
+function setTelemetryCategory(error, category) {
+  if (error && typeof error === "object" && Object.isExtensible(error)) {
+    error.telemetryCategory = category;
+  }
+}
+
 function createDeadlineError() {
   const error = new Error("Tempo limite de processamento excedido.");
   error.status = 503;
+  error.telemetryCategory = "gemini_timeout";
   return error;
 }
 

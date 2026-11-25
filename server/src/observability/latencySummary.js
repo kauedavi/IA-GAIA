@@ -9,7 +9,12 @@ function percentage(numerator, denominator) {
 }
 
 function summarizeGroup(records) {
-  const errors = records.filter((record) => record.status >= 400).length;
+  const errors = records.filter((record) => {
+    if (record.logical_result === "failure") return true;
+    if (record.logical_result === "success" || record.logical_result === "cancelled") return false;
+    return (record.http_status ?? record.status) >= 400;
+  }).length;
+  const cancelledRequests = records.filter((record) => record.logical_result === "cancelled").length;
   const fallbackAttempts = records.filter((record) => record.fallback_attempted).length;
   const fallbackSuccesses = records.filter((record) => record.fallback_used).length;
   const geminiAttempts = records.reduce(
@@ -53,6 +58,7 @@ function summarizeGroup(records) {
   return {
     requests: records.length,
     errors,
+    cancelled_requests: cancelledRequests,
     error_rate_percent: percentage(errors, records.length),
     fallback_attempts: fallbackAttempts,
     fallback_attempt_rate_percent: percentage(fallbackAttempts, records.length),

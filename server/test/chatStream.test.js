@@ -73,6 +73,8 @@ test("sends text chunks before the Gemini stream completes", async () => {
   const metrics = logLines.map((line) => JSON.parse(line)).find((line) => line.event === "api_latency");
   assert.equal(metrics.route, "/api/chat/stream");
   assert.ok(metrics.response_bytes > 0);
+  assert.equal(metrics.http_status, 200);
+  assert.equal(metrics.logical_result, "success");
 });
 
 test("resets provisional text before processing a tool call", async () => {
@@ -124,6 +126,9 @@ test("resets provisional text before processing a tool call", async () => {
 
 test("propagates a disconnected client cancellation to the Gemini stream", async () => {
   const originalStream = gemini.models.generateContentStream;
+  const originalLog = console.log;
+  const logLines = [];
+  console.log = (line) => logLines.push(line);
   let signal;
   let resolveAbort;
   const observedAbort = new Promise((resolve) => {
@@ -149,18 +154,29 @@ test("propagates a disconnected client cancellation to the Gemini stream", async
     await reader.read();
     await reader.cancel();
     assert.equal(await observedAbort, true);
+    await new Promise((resolve) => setImmediate(resolve));
   } finally {
     gemini.models.generateContentStream = originalStream;
+    console.log = originalLog;
   }
+
+  const metrics = logLines.map((line) => JSON.parse(line)).find((line) => line.event === "api_latency");
+  assert.equal(metrics.http_status, 200);
+  assert.equal(metrics.logical_result, "cancelled");
+  assert.equal(metrics.error_category, "client_cancelled");
+  assert.equal(metrics.gemini_failures, 0);
 });
 
 test("sends a structured SSE error when Gemini rejects a streamed request", async () => {
   const originalStream = gemini.models.generateContentStream;
   const originalError = console.error;
+  const originalLog = console.log;
+  const logLines = [];
   gemini.models.generateContentStream = async () => {
     throw Object.assign(new Error("invalid provider request"), { status: 400 });
   };
   console.error = () => {};
+  console.log = (line) => logLines.push(line);
 
   try {
     const response = await fetch(apiUrl, {
@@ -176,7 +192,16 @@ test("sends a structured SSE error when Gemini rejects a streamed request", asyn
   } finally {
     gemini.models.generateContentStream = originalStream;
     console.error = originalError;
+    console.log = originalLog;
   }
+
+  const metrics = logLines.map((line) => JSON.parse(line)).find((line) => line.event === "api_latency");
+  assert.equal(metrics.http_status, 200);
+  assert.equal(metrics.logical_result, "failure");
+  assert.equal(metrics.error_category, "gemini_failure");
+  assert.equal(metrics.gemini_failures, 1);
+  assert.equal(metrics.gemini_calls[0].outcome, "failure");
+  assert.ok(!JSON.stringify(metrics).includes("invalid provider request"));
 });
 
 function parseEvents(streamText) {

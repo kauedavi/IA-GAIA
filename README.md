@@ -397,6 +397,8 @@ Cada `POST /api/chat` registra uma linha JSON `api_latency`. Os dados não inclu
 A métrica contém:
 
 - Duração total e chamadas Gemini.
+- Status HTTP real (`http_status`) e resultado lógico (`logical_result`: sucesso, falha ou cancelamento do cliente).
+- Categoria segura do erro, sem mensagens integrais ou dados da requisição.
 - Retries, fallback e backoff.
 - Duração das ferramentas.
 - Número de rodadas.

@@ -90,6 +90,8 @@ test("logs chat latency without sensitive content and summarizes latency percent
   assert.equal(metrics.length, 2);
   assert.equal(metrics[0].event, "api_latency");
   assert.equal(metrics[0].status, 200);
+  assert.equal(metrics[0].http_status, 200);
+  assert.equal(metrics[0].logical_result, "success");
   assert.equal(metrics[0].service_activity, "first");
   assert.equal(metrics[0].rounds, 2);
   assert.equal(metrics[0].gemini_attempts, 5);
@@ -121,6 +123,9 @@ test("logs chat latency without sensitive content and summarizes latency percent
   assert.ok(metrics[0].duration_ms >= metrics[0].gemini_duration_ms);
   assert.ok(metrics[0].response_bytes > 0);
   assert.equal(metrics[1].status, 400);
+  assert.equal(metrics[1].http_status, 400);
+  assert.equal(metrics[1].logical_result, "failure");
+  assert.equal(metrics[1].error_category, "application_error");
   assert.equal(metrics[1].service_activity, "active");
   assert.equal(metrics[1].gemini_attempts, 0);
   assert.ok(metrics.every((record) => !JSON.stringify(record).includes("PROMPT_MUST_NOT_BE_LOGGED")));
@@ -231,12 +236,84 @@ test("does not retry or use fallback for permanent Gemini validation errors", as
   const metrics = JSON.parse(logLines[0]);
   assert.equal(generateCalls, 1);
   assert.equal(loggedErrors.length, 1);
-  assert.equal(loggedErrors[0].status, 400);
+  assert.deepEqual(JSON.parse(loggedErrors[0]), {
+    event: "api_error",
+    status: 400,
+    category: "gemini_failure",
+  });
   assert.equal(metrics.gemini_attempts, 1);
   assert.equal(metrics.gemini_retries, 0);
+  assert.equal(metrics.gemini_failures, 1);
+  assert.equal(metrics.gemini_calls[0].outcome, "failure");
+  assert.equal(metrics.logical_result, "failure");
   assert.equal(metrics.fallback_attempted, false);
   assert.equal(metrics.fallback_used, false);
   assert.ok(requestOptions.timeout > 0 && requestOptions.timeout <= 25_000);
   assert.deepEqual(requestOptions.retryOptions, { attempts: 1 });
   assert.ok(!JSON.stringify(metrics).includes("VALIDATION_PROMPT_MUST_NOT_BE_LOGGED"));
+});
+
+test("counts provider timeouts once per Gemini call and once as a logical request failure", async () => {
+  const originalGenerateContent = gemini.models.generateContent;
+  const originalLog = console.log;
+  const originalError = console.error;
+  const logLines = [];
+  const errorLines = [];
+  let generateCalls = 0;
+
+  gemini.models.generateContent = async () => {
+    generateCalls += 1;
+    const error = new Error("provider timeout with private details");
+    error.name = generateCalls === 1 ? "AbortError" : "TimeoutError";
+    throw error;
+  };
+  console.log = (line) => logLines.push(line);
+  console.error = (line) => errorLines.push(line);
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message: "TIMEOUT_PROMPT_MUST_NOT_BE_LOGGED" }),
+    });
+    assert.equal(response.status, 500);
+  } finally {
+    console.log = originalLog;
+    console.error = originalError;
+    gemini.models.generateContent = originalGenerateContent;
+  }
+
+  const metrics = logLines.map((line) => JSON.parse(line)).find((line) => line.event === "api_latency");
+  assert.equal(generateCalls, 6);
+  assert.equal(metrics.http_status, 500);
+  assert.equal(metrics.logical_result, "failure");
+  assert.equal(metrics.error_category, "gemini_timeout");
+  assert.equal(metrics.gemini_failures, generateCalls);
+  assert.equal(metrics.gemini_calls.length, generateCalls);
+  assert.ok(metrics.gemini_calls.every(({ outcome, status }) => outcome === "failure" && status === null));
+  assert.deepEqual(JSON.parse(errorLines[0]), {
+    event: "api_error",
+    status: 500,
+    category: "gemini_timeout",
+  });
+  assert.ok(!JSON.stringify(metrics).includes("provider timeout with private details"));
+  assert.ok(!JSON.stringify(metrics).includes("TIMEOUT_PROMPT_MUST_NOT_BE_LOGGED"));
+  assert.equal(summarizeLatencyRecords([metrics]).overall.errors, 1);
+});
+
+test("summarizes logical failures, HTTP errors, cancellations, and legacy records", () => {
+  const summary = summarizeLatencyRecords([
+    { event: "api_latency", duration_ms: 10, http_status: 200, logical_result: "success" },
+    { event: "api_latency", duration_ms: 10, http_status: 200, logical_result: "failure" },
+    { event: "api_latency", duration_ms: 10, http_status: 200, logical_result: "cancelled" },
+    { event: "api_latency", duration_ms: 10, http_status: 200, logical_result: "success" },
+    { event: "api_latency", duration_ms: 10, http_status: 400, logical_result: "failure" },
+    { event: "api_latency", duration_ms: 10, status: 200 },
+    { event: "api_latency", duration_ms: 10, status: 400 },
+  ]);
+
+  assert.equal(summary.overall.requests, 7);
+  assert.equal(summary.overall.errors, 3);
+  assert.equal(summary.overall.error_rate_percent, 42.9);
+  assert.equal(summary.overall.cancelled_requests, 1);
 });

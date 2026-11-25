@@ -11,12 +11,15 @@ export function getChatMessage(req) {
 export async function chatController(req, res, next) {
   const message = getChatMessage(req);
   if (!message) {
+    recordFailure(req.latencyMetrics, null);
     return res.status(400).json({ success: false, error: "message deve conter entre 1 e 2000 caracteres." });
   }
   try {
     const data = await chatService(message, req.latencyMetrics);
+    if (req.latencyMetrics) req.latencyMetrics.logical_result = "success";
     return res.json({ success: true, data });
   } catch (error) {
+    recordFailure(req.latencyMetrics, error);
     return next(error);
   }
 }
@@ -24,12 +27,19 @@ export async function chatController(req, res, next) {
 export async function chatStreamController(req, res) {
   const message = getChatMessage(req);
   if (!message) {
+    recordFailure(req.latencyMetrics, null);
     return res.status(400).json({ success: false, error: "message deve conter entre 1 e 2000 caracteres." });
   }
 
   const abortController = new AbortController();
   const abortWhenDisconnected = () => {
-    if (!res.writableFinished) abortController.abort();
+    if (!res.writableFinished) {
+      if (req.latencyMetrics) {
+        req.latencyMetrics.logical_result = "cancelled";
+        req.latencyMetrics.error_category = "client_cancelled";
+      }
+      abortController.abort();
+    }
   };
   req.once("aborted", abortWhenDisconnected);
   res.once("close", abortWhenDisconnected);
@@ -50,11 +60,18 @@ export async function chatStreamController(req, res) {
     });
     if (!abortController.signal.aborted) {
       await writeStreamEvent(res, req, "done", { success: true, data });
+      if (req.latencyMetrics) req.latencyMetrics.logical_result = "success";
       if (!res.destroyed) res.end();
     }
   } catch (error) {
-    if (abortController.signal.aborted || res.destroyed) return;
-    console.error(error);
+    if (abortController.signal.aborted || res.destroyed || error?.code === "CLIENT_DISCONNECTED") {
+      if (req.latencyMetrics) {
+        req.latencyMetrics.logical_result = "cancelled";
+        req.latencyMetrics.error_category = "client_cancelled";
+      }
+      return;
+    }
+    recordFailure(req.latencyMetrics, error);
     const status = [400, 404, 429, 500, 503].includes(error.status) ? error.status : 500;
     const message =
       status === 400
@@ -68,6 +85,10 @@ export async function chatStreamController(req, res) {
       await writeStreamEvent(res, req, "error", { success: false, error: message, status });
       if (!res.destroyed) res.end();
     } catch (writeError) {
+      if (req.latencyMetrics && (res.destroyed || writeError?.code === "CLIENT_DISCONNECTED")) {
+        req.latencyMetrics.logical_result = "cancelled";
+        req.latencyMetrics.error_category = "client_cancelled";
+      }
       if (!res.destroyed) res.destroy(writeError);
     }
   } finally {
@@ -86,14 +107,24 @@ async function writeStreamEvent(res, req, event, data) {
     if (!canContinue) {
       const error = new Error("Cliente encerrou a conexão.");
       error.name = "AbortError";
+      error.code = "CLIENT_DISCONNECTED";
       throw error;
     }
   }
   if (res.destroyed) {
     const error = new Error("Cliente encerrou a conexão.");
     error.name = "AbortError";
+    error.code = "CLIENT_DISCONNECTED";
     throw error;
   }
+}
+
+function recordFailure(metrics, error) {
+  if (!metrics) return;
+  metrics.logical_result = "failure";
+  metrics.error_category = ["gemini_failure", "gemini_timeout"].includes(error?.telemetryCategory)
+    ? error.telemetryCategory
+    : "application_error";
 }
 
 function waitForDrainOrClose(res) {

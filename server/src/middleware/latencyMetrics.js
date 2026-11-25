@@ -40,6 +40,8 @@ export function latencyMetrics(req, res, next) {
     schedule_cache_hit_duration_ms: 0,
     schedule_cache_miss_duration_ms: 0,
     response_bytes: null,
+    logical_result: null,
+    error_category: null,
   };
   activeRequestCount += 1;
   req.latencyMetrics = metrics;
@@ -60,16 +62,18 @@ export function latencyMetrics(req, res, next) {
     console.log(
       JSON.stringify({
         event: "api_latency",
+        ...metrics,
         method: req.method,
         route: `${req.baseUrl}${req.path}`,
         status: res.statusCode,
+        http_status: res.statusCode,
         duration_ms: Math.round(performance.now() - startedAt),
-        ...metrics,
+        logical_result: metrics.logical_result || (res.statusCode >= 400 ? "failure" : "success"),
       })
     );
   };
   res.once("finish", recordCompletion);
-  res.once("close", recordCompletion);
+  res.once("close", () => queueMicrotask(recordCompletion));
 
   next();
 }

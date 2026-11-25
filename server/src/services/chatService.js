@@ -19,7 +19,7 @@ const RETRYABLE_ERROR_CODES = new Set([
   "UND_ERR_SOCKET",
 ]);
 
-export async function chatService(message, metrics) {
+export async function chatService(message, metrics, streamOptions = {}) {
   const localResponse = respondToLocalRoomIntent(message);
   if (localResponse) return localResponse;
 
@@ -29,7 +29,7 @@ export async function chatService(message, metrics) {
 
   for (let round = 0; round < MAX_ROUNDS; round += 1) {
     if (metrics) metrics.rounds += 1;
-    const response = await generateWithFallback(contents, metrics, deadline);
+    const response = await generateWithFallback(contents, metrics, deadline, streamOptions);
 
     const calls = response.functionCalls || [];
     if (!calls.length) {
@@ -69,7 +69,7 @@ export async function chatService(message, metrics) {
   throw new Error("Limite de chamadas de ferramentas excedido.");
 }
 
-async function generateWithFallback(contents, metrics, deadline) {
+async function generateWithFallback(contents, metrics, deadline, streamOptions) {
   const models = [geminiModel, geminiFallbackModel].filter(
     (model, index, list) => model && list.indexOf(model) === index
   );
@@ -92,7 +92,7 @@ async function generateWithFallback(contents, metrics, deadline) {
       let outcome = "failure";
       let errorStatus = null;
       try {
-        const response = await gemini.models.generateContent({
+        const request = {
           model,
           contents,
           config: {
@@ -103,8 +103,12 @@ async function generateWithFallback(contents, metrics, deadline) {
               timeout: remainingMs,
               retryOptions: { attempts: 1 },
             },
-          }
-        });
+            ...(streamOptions.signal ? { abortSignal: streamOptions.signal } : {}),
+          },
+        };
+        const response = streamOptions.onText
+          ? await generateStreamingResponse(request, streamOptions)
+          : await gemini.models.generateContent(request);
         outcome = "success";
         if (metrics) {
           metrics.selected_model = model;
@@ -114,6 +118,7 @@ async function generateWithFallback(contents, metrics, deadline) {
       } catch (error) {
         lastError = error;
         errorStatus = Number.isInteger(error?.status) ? error.status : null;
+        if (streamOptions.signal?.aborted || error?.name === "AbortError") throw error;
         if (metrics) metrics.gemini_failures += 1;
         if (!isTransientError(error)) throw error;
         if (attempt === MAX_RETRIES - 1) break;
@@ -142,6 +147,54 @@ async function generateWithFallback(contents, metrics, deadline) {
   throw lastError;
 }
 
+async function generateStreamingResponse(request, { onText, onReset, signal }) {
+  const stream = await gemini.models.generateContentStream(request);
+  const parts = [];
+  const functionCalls = [];
+  let text = "";
+  let hasEmittedText = false;
+
+  try {
+    for await (const chunk of stream) {
+      if (signal?.aborted) throw createAbortError();
+
+      const chunkParts = chunk.candidates?.[0]?.content?.parts || [];
+      parts.push(...chunkParts);
+      const calls = chunk.functionCalls?.length
+        ? chunk.functionCalls
+        : chunkParts.filter((part) => part.functionCall).map((part) => part.functionCall);
+      if (calls.length) {
+        functionCalls.push(...calls);
+        if (hasEmittedText) {
+          await onReset();
+          hasEmittedText = false;
+          text = "";
+        }
+        continue;
+      }
+
+      const chunkText = chunk.text || chunkParts
+        .filter((part) => part.text && !part.thought)
+        .map((part) => part.text)
+        .join("");
+      if (chunkText) {
+        text += chunkText;
+        hasEmittedText = true;
+        await onText(chunkText);
+      }
+    }
+  } catch (error) {
+    if (hasEmittedText) await onReset();
+    throw error;
+  }
+
+  return {
+    text,
+    functionCalls,
+    candidates: parts.length ? [{ content: { parts } }] : [],
+  };
+}
+
 function isTransientError(error) {
   if (RETRYABLE_STATUSES.has(error?.status)) return true;
   if (error?.name === "TimeoutError" || error?.name === "AbortError") return true;
@@ -152,6 +205,12 @@ function isTransientError(error) {
 function createDeadlineError() {
   const error = new Error("Tempo limite de processamento excedido.");
   error.status = 503;
+  return error;
+}
+
+function createAbortError() {
+  const error = new Error("Requisição interrompida.");
+  error.name = "AbortError";
   return error;
 }
 

@@ -28,7 +28,7 @@ app.use(
   })
 );
 app.use((req, res, next) => {
-  if (req.method === "POST" && req.path === "/api/chat") {
+  if (req.method === "POST" && ["/api/chat", "/api/chat/stream"].includes(req.path)) {
     return latencyMetrics(req, res, next);
   }
   return next();

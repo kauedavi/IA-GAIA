@@ -610,6 +610,25 @@ function digitando() {
   $("conversa").scrollTop = 1e9;
   return d;
 }
+function adicionarTextoTransmitido(id, texto) {
+  var pedido = pendentes[id];
+  if (!pedido || pedido.cancelado) return;
+  if (!pedido.streamNode) {
+    pedido.dg.className = "msg ia";
+    pedido.dg.textContent = "";
+    pedido.streamNode = pedido.dg;
+  }
+  pedido.streamNode.textContent += texto;
+  $("conversa").scrollTop = 1e9;
+}
+function reiniciarTextoTransmitido(id) {
+  var pedido = pendentes[id];
+  if (!pedido || pedido.cancelado) return;
+  pedido.dg.className = "msg ia digitando";
+  pedido.dg.innerHTML = "<span></span><span></span><span></span>";
+  pedido.streamNode = null;
+  $("conversa").scrollTop = 1e9;
+}
 function enviar(txt) {
   txt = String(txt || "").trim();
   if (!txt || chatRequestBusy) return;
@@ -815,26 +834,27 @@ function perguntarIA(txt) {
     }
   }, 30000);
 
-  var opcoesFetch = {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: txt }),
-  };
-  if (controller) opcoesFetch.signal = controller.signal;
+  var transporte = window.GAIA_CHAT_TRANSPORT;
+  if (!transporte || typeof transporte.request !== "function") {
+    window.gaiaResposta(id, JSON.stringify({
+      ok: false,
+      erro: "transporte do chat indisponível",
+    }));
+    return;
+  }
 
-  fetch(window.GAIA_API_URL || "http://localhost:3000/api/chat", opcoesFetch)
-    .then(function (response) {
-      return response.json().catch(function () {
-        throw new Error("O servidor retornou uma resposta inválida.");
-      }).then(function (payload) {
-        if (!response.ok) {
-          throw new Error(payload.error || "HTTP " + response.status);
-        }
-        return payload;
-      });
-    })
+  transporte.request({
+    url: window.GAIA_API_URL || "http://localhost:3000/api/chat",
+    message: txt,
+    signal: controller ? controller.signal : undefined,
+    onChunk: function (texto) {
+      adicionarTextoTransmitido(id, texto);
+    },
+    onReset: function () {
+      reiniciarTextoTransmitido(id);
+    },
+  })
     .then(function (payload) {
-      if (!payload.success) throw new Error(payload.error || "Resposta inválida");
       window.gaiaResposta(id, JSON.stringify({
         ok: true,
         texto: payload.data.message,

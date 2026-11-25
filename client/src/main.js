@@ -1,3 +1,9 @@
+import { GAIA_API_URL } from "./config.js";
+import { requestChat } from "./features/chatStream.js";
+
+window.GAIA_API_URL = window.GAIA_API_URL || GAIA_API_URL;
+window.GAIA_CHAT_TRANSPORT = { request: requestChat };
+
 const modules = [
   "./platform/platform.js",
   "./data/appData.js",

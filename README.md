@@ -50,15 +50,8 @@ CLIENT_ORIGIN=http://localhost:5500
 ### Configuração do frontend
 
 O frontend é estático e não usa um bundler, então variáveis `.env` não são
-carregadas automaticamente pelo navegador. Copie
-`client/.env.example` apenas como referência e defina a URL da API antes dos
-módulos do client em `client/index.html`:
-
-```html
-<script>
-  window.GAIA_API_URL = "https://sua-api.up.railway.app/api/chat";
-</script>
-```
+carregadas automaticamente pelo navegador. Configure a URL da API em
+`client/src/config.js`; a chave do Gemini não pertence ao frontend.
 
 Essa é a única variável necessária no frontend. A chave `GEMINI_API_KEY` deve
 permanecer exclusivamente no backend.
@@ -80,6 +73,14 @@ O endpoint de chat é `POST /api/chat`, com o corpo:
 ```json
 {"message":"Onde fica a sala 304?"}
 ```
+
+A interface tenta primeiro `POST /api/chat/stream` e renderiza os eventos
+SSE de texto progressivamente. Se a API ainda não oferecer esse endpoint,
+usa o fluxo JSON existente em `POST /api/chat`. O endpoint JSON permanece
+disponível como alternativa.
+
+Execute `npm test` para rodar os testes do backend e do transporte de streaming
+do client.
 
 ## Como gerar o APK Android
 
@@ -148,6 +149,11 @@ Gemini. O frontend usa um ponto de entrada ES Module e módulos de domínio
 carregados sequencialmente, sem bundler. Os módulos de domínio são scripts
 clássicos intencionais para preservar os contratos globais usados pelos
 callbacks do Android, eventos inline e mapa.
+
+O transporte de chat com streaming é um ES Module (`client/src/features/chatStream.js`),
+exposto pelo ponto de entrada como `window.GAIA_CHAT_TRANSPORT`. Os callbacks
+globais já usados pelo Android permanecem inalterados; uma migração mais ampla
+dos módulos de domínio não faz parte dessa mudança.
 
 O backend concentra a chave e a integração com a IA. Seus casos de uso são
 organizados em controllers, services, agent, data e routes, mantendo a

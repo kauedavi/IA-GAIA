@@ -4,7 +4,7 @@
   "description": "Projeto para implementação de IA para alunos poderem se localizarem e estarem cientes dos locais da Instituição SENAI \"Anchieta\"",
   "main": "index.js",
   "scripts": {
-    "test": "node --test server/test/*.test.js",
+    "test": "node --test server/test/*.test.js client/test/*.test.js",
     "start": "node server/server.js",
     "cap:sync": "cap sync android",
     "android:open": "cap open android",

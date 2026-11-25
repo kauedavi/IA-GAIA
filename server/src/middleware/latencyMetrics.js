@@ -51,20 +51,25 @@ export function latencyMetrics(req, res, next) {
     return originalJson.call(this, body);
   };
 
-  res.once("finish", () => {
+  let recorded = false;
+  const recordCompletion = () => {
+    if (recorded) return;
+    recorded = true;
     activeRequestCount -= 1;
     lastRequestFinishedAt = performance.now();
     console.log(
       JSON.stringify({
         event: "api_latency",
         method: req.method,
-        route: "/api/chat",
+        route: `${req.baseUrl}${req.path}`,
         status: res.statusCode,
         duration_ms: Math.round(performance.now() - startedAt),
         ...metrics,
       })
     );
-  });
+  };
+  res.once("finish", recordCompletion);
+  res.once("close", recordCompletion);
 
   next();
 }

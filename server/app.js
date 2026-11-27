@@ -5,8 +5,25 @@ import { authRoutes } from "./src/routes/authRoutes.js";
 import { chatRoutes } from "./src/routes/chatRoutes.js";
 import { spreadsheetRoutes } from "./src/routes/spreadsheetRoutes.js";
 import { latencyMetrics } from "./src/middleware/latencyMetrics.js";
+import helmet from "helmet";
+import { rateLimit } from "express-rate-limit";
+
 
 const app = express();
+app.set("trust proxy", 1);
+
+app.use(helmet());
+
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 3,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Limite de requisições atingido. Tente novamente em instantes.",
+  },
+});
 
 const configuredOrigins = (process.env.CLIENT_ORIGIN || "")
   .split(",")
@@ -39,6 +56,9 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "32kb" }));
 app.get("/health", (_req, res) => res.json({ success: true, data: { status: "ok" } }));
+
+app.use("/api/chat", chatLimiter);
+
 app.use("/api", authRoutes);
 app.use("/api", chatRoutes);
 app.use("/api", spreadsheetRoutes);
@@ -65,6 +85,11 @@ app.use((error, req, res, _next) => {
           ? "O limite de solicitações do Gemini foi atingido. Tente novamente em instantes."
           : "Erro interno ao processar a solicitação.";
   res.status(status).json({ success: false, error: message });
+
+  const helmet = require("helmet");
+  const { rateLimit } = require("express-rate-limit");
+
+  
 });
 
 export { app };
